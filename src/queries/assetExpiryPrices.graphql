@@ -1,0 +1,9 @@
+query assetExpiryPrices($asset: String!) {
+  expiryPrices(where: { asset: $asset }) {
+    expiry
+    asset {
+      id
+    }
+    price
+  }
+}

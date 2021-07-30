@@ -1,0 +1,546 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { BigNumber } from 'bignumber.js';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import List from '@material-ui/core/List';
+import Typography from '@material-ui/core/Typography';
+import Box from '@material-ui/core/Box';
+import ReactGA from 'react-ga';
+
+import TradeButton from '../TradeTicketButton';
+import SmallLimitOrderWarning from '../SmallLimitOrderWarning';
+import {
+  useControllerActions,
+  useZeroX,
+  useWallet,
+  useController,
+  useApproval,
+  Spender,
+  useOrderTicketItemStyle,
+  useAddresses,
+  useGasPrice,
+} from '../../hooks';
+import { ERC20, OToken } from '../../types';
+import { calculateOrderOutput, getMarketImpact } from '../../utils/0x-utils';
+import { calculateSimpleCollateral, fromTokenAmount, toTokenAmount } from '../../utils/calculations';
+import { PAYABLE_PROXY, Errors, CreateMode, TradeAction, ESTIMATE_FILL_COST_PER_GWEI } from '../../utils/constants';
+import { SellTicketInfo } from '../OrderTicket/TicketInfo';
+import { useToast } from '../../context/toast';
+import { ListItem } from '../ActionCard';
+import { parseTxErrorMessage, parseTxErrorType, parseBigNumber } from '../../utils/parse';
+import TxSteps, { TxStepType } from '../OrderTicket/TxSteps';
+import PartialCollat from '../PartialCollat';
+
+type SellCheckoutProps = {
+  mode: CreateMode;
+  collateral: ERC20;
+  usdcBalance: BigNumber;
+  otokenBalance: BigNumber;
+  collateralBalance: BigNumber;
+  underlyingBalance: BigNumber;
+  input: BigNumber;
+  setInput: any;
+  otoken: OToken;
+  setError: any;
+  isError: any;
+  underlyingPrice: BigNumber;
+  setIsConfirmed: React.Dispatch<React.SetStateAction<boolean>>;
+  setTxHash: React.Dispatch<React.SetStateAction<string>>;
+  setConfirmDescription: React.Dispatch<React.SetStateAction<string>>;
+  price: BigNumber;
+  deadline: number;
+  errorType: Errors;
+};
+
+const SellCheckout = ({
+  mode,
+  setError,
+  isError,
+  collateral,
+  usdcBalance,
+  underlyingBalance,
+  otokenBalance,
+  input,
+  otoken,
+  collateralBalance,
+  setIsConfirmed,
+  setTxHash,
+  setConfirmDescription,
+  price,
+  deadline,
+  underlyingPrice,
+  errorType,
+}: SellCheckoutProps) => {
+  const toast = useToast();
+  const [steps, setSteps] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPartial, setIsPartial] = useState(true);
+  const [collateralPercent, setCollateralPercent] = useState(100);
+
+  const [hasApprovedPool, setHasApprovedPool] = useState(false);
+  const [hasApproved0x, setHasApproved0x] = useState(false);
+  const [hasSetOperator, setHasSetOperator] = useState(false);
+
+  const [mintAmount, setMintAmount] = useState<BigNumber>(new BigNumber(0));
+  const [hasSentMintTx, setHasSentMintTx] = useState(false);
+  const [buttonLabel, setButtonLabel] = useState('');
+  const [onClick, setOnClick] = useState<Function>(() => {});
+  // const [isExchangeTxn, setIsExchangeTxn] = useState(false);
+
+  const { address: account, networkId, signer, ethBalance } = useWallet();
+
+  const [payableProxyEnabled, setPayableProxyEnabled] = useState(false);
+
+  const sellAmount = useMemo(() => fromTokenAmount(input, 8).integerValue(), [input]);
+
+  const classes = useOrderTicketItemStyle();
+
+  const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, orderBooks, createOrder, broadcastOrder } = useZeroX();
+  const { approve: approve0xProxy, allowance: oTokenAllowance, loading: loadingOTokenAllowance } = useApproval(
+    otoken.id,
+    Spender.ZeroXExchange,
+  );
+
+  const { bids } = useMemo(() => {
+    const target = orderBooks.find(book => book.id === otoken.id);
+    return target ? target : { bids: [] };
+  }, [otoken, orderBooks]);
+
+  const {
+    approve: approveCollateral,
+    allowance: collateralAllowance,
+    loading: loadingCollateralAllowance,
+  } = useApproval(otoken.collateralAsset.id, Spender.MarginPool);
+  const controllerState = useController();
+
+  useEffect(() => {
+    if (!controllerState) return;
+    const { isOperator, payableProxy } = controllerState;
+    if (!isOperator || !payableProxy) return;
+    isOperator({ operator: payableProxy.address, account }).then(enabled => setPayableProxyEnabled(enabled));
+  }, [account, controllerState]);
+
+  const { depositAndMint } = useControllerActions();
+
+  const isLoadingAllowance = loadingOTokenAllowance || loadingCollateralAllowance;
+
+  useEffect(() => {
+    const _mintAmount = sellAmount.gt(otokenBalance) ? sellAmount.minus(otokenBalance) : new BigNumber(0);
+    setMintAmount(_mintAmount);
+  }, [sellAmount, otokenBalance]);
+
+  const { fast: gasPrice } = useGasPrice(5);
+
+  const { error: fillOrderError, ordersToFill, amounts: fillAmounts, sumOutput } = useMemo(() => {
+    return calculateOrderOutput(bids, sellAmount, { gasPrice, ethPrice: underlyingPrice });
+  }, [bids, sellAmount, gasPrice, underlyingPrice]);
+
+  // const gasToPay = use0xGasFee(ordersToFill, fillAmounts, false, isExchangeTxn, isError);
+
+  const { error: marketError, marketImpact } = useMemo(() => {
+    return getMarketImpact(TradeAction.SELL, bids, sellAmount, sumOutput, getProtocolFee(ordersToFill), gasPrice);
+  }, [bids, sellAmount, sumOutput, ordersToFill, getProtocolFee, gasPrice]);
+
+  const neededCollateral = useMemo(() => (otoken ? calculateSimpleCollateral(otoken, mintAmount) : new BigNumber(0)), [
+    mintAmount,
+    otoken,
+  ]);
+
+  const actualNeededCollateral = useMemo(() => {
+    if (!isPartial) return neededCollateral;
+    return neededCollateral.multipliedBy(new BigNumber(collateralPercent / 100)).integerValue(BigNumber.ROUND_CEIL);
+  }, [collateralPercent, isPartial, neededCollateral]);
+
+  // check if need to approve erc20 proxy.
+  const hasApproved0xProxy = useMemo(() => oTokenAllowance.gte(sellAmount), [oTokenAllowance, sellAmount]);
+
+  const hasApprovedCollateral = useMemo(() => {
+    if (!otoken) return false;
+    if (otoken.collateralAsset.symbol === 'WETH') {
+      return true;
+    }
+    return collateralAllowance.gte(actualNeededCollateral);
+  }, [otoken, actualNeededCollateral, collateralAllowance]);
+
+  const totalPremium = useMemo(() => {
+    if (mode === CreateMode.Market) return sumOutput;
+    else return fromTokenAmount(input.times(price), 6);
+  }, [mode, sumOutput, input, price]);
+
+  const protocolFeeInUsdc = getProtocolFeeInUsdc(ordersToFill);
+
+  const premiumToReceiveWithProtocolFee = new BigNumber(
+    Number(parseBigNumber(totalPremium, 6)) - protocolFeeInUsdc.toNumber(),
+  ).precision(6);
+
+  const netPremiumIsNegative = Math.sign(premiumToReceiveWithProtocolFee.toNumber()) === -1;
+
+  // set collateral message
+  useEffect(() => {
+    let currDate = Math.floor(Date.now() / 1000);
+    let deadlineTimestamp = +deadline + +currDate;
+
+    if (fillOrderError && mode === CreateMode.Market) return setError(fillOrderError);
+    if (marketError && mode === CreateMode.Market) return setError(marketError);
+    if (collateral.symbol !== 'WETH' && actualNeededCollateral.gt(collateralBalance))
+      return setError(Errors.INSUFFICIENT_BALANCE);
+    if (collateral.symbol === 'WETH' && actualNeededCollateral.gt(ethBalance))
+      return setError(Errors.INSUFFICIENT_BALANCE);
+    // if (steps === 4 && ethBalance.lt(gasToPay.gasToPay) && mode === CreateMode.Market)
+    //   return setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
+    if (deadlineTimestamp > otoken.expiry && CreateMode.Limit) return setError(Errors.DEADLINE_PAST_EXPIRY);
+    if (isPartial && errorType === Errors.SMALL_COLLATERAL) return;
+    if (isPartial && errorType === Errors.MAX_CAP_REACHED) return;
+    if (netPremiumIsNegative) return setError(Errors.FEE_HIGHER_THAN_PREMIUM);
+    setError(Errors.NO_ERROR);
+  }, [
+    marketError,
+    actualNeededCollateral,
+    collateralBalance,
+    collateral.symbol,
+    setError,
+    signer,
+    fillOrderError,
+    ethBalance,
+    mode,
+    steps,
+    deadline,
+    otoken.expiry,
+    netPremiumIsNegative,
+    isPartial,
+    errorType,
+  ]);
+
+  const handleError = useCallback(
+    (error, errorStep?: string) => {
+      setIsLoading(false);
+      const message = parseTxErrorMessage(error);
+      const errorType = parseTxErrorType(error);
+      toast.error(message);
+      if (errorStep)
+        ReactGA.event({
+          category: 'Transactions',
+          action: errorType,
+          label: `${errorStep} - ${message}`,
+        });
+    },
+    [toast],
+  );
+
+  const approveERC20Proxy = useCallback(async () => {
+    if (!otoken) throw new Error('No OToken selected');
+    if (!approve0xProxy) return;
+    ReactGA.event({
+      category: 'Sell',
+      action: 'ClickedApproveOtoken_3/4',
+    });
+    setIsLoading(true);
+    const callback = () => {
+      setIsLoading(false);
+      setHasApproved0x(true);
+      ReactGA.event({
+        category: 'Transactions',
+        action: 'Success',
+        label: `${deadline > 0 ? 'SellLimit_HasApproved0x_3/4' : 'Sell_HasApproved0x_3/4'}`,
+      });
+    };
+    await approve0xProxy({
+      callback,
+      onError: (error: any) =>
+        handleError(error, `${deadline > 0 ? 'SellLimit_HasApproved0x_3/4' : 'Sell_HasApproved0x_3/4'}`),
+    });
+  }, [approve0xProxy, setHasApproved0x, otoken, handleError, deadline]);
+
+  const addPayableProxyAsOperator = useCallback(async () => {
+    if (controllerState === undefined) return;
+    const { addOperator } = controllerState;
+    if (!addOperator) return;
+    ReactGA.event({
+      category: 'Sell',
+      action: 'ClickedApproveWethWrapper_0/4',
+    });
+    setIsLoading(true);
+    try {
+      await addOperator({
+        operator: PAYABLE_PROXY[networkId].toLowerCase(),
+        isOperator: true,
+        callback: () => {
+          setIsLoading(false);
+          setHasSetOperator(true);
+          ReactGA.event({
+            category: 'Transactions',
+            action: 'Success',
+            label: 'Sell_HasSetOperator_0/4',
+          });
+        },
+      });
+    } catch (error) {
+      handleError(error, 'Sell_HasSetOperator_0/4');
+    }
+  }, [controllerState, networkId, handleError]);
+
+  const approveMarginPool = useCallback(async () => {
+    if (!otoken) throw new Error('No OToken selected');
+    if (!approveCollateral) return;
+    ReactGA.event({
+      category: 'Sell',
+      action: 'ClickedApproveCollateral_1/4',
+    });
+    setIsLoading(true);
+    await approveCollateral({
+      callback: () => {
+        setIsLoading(false);
+        setHasApprovedPool(true);
+        ReactGA.event({
+          category: 'Transactions',
+          action: 'Success',
+          label: 'Sell_HasApprovedPool_1/4',
+        });
+      },
+      onError: (error: any) => handleError(error, 'Sell_HasApprovedPool_1/4'),
+    });
+  }, [otoken, approveCollateral, handleError]);
+
+  // mint oToken
+  const mint = useCallback(async () => {
+    if (!otoken) throw new Error('No OToken selected');
+    if (!depositAndMint) return;
+    ReactGA.event({
+      category: 'Sell',
+      action: 'ClickedIssueOtoken_2/4',
+    });
+    setIsLoading(true);
+    const args = {
+      account: account,
+      vaultId: 0, // will be override
+      oToken: otoken.id,
+      mintAmount,
+      collateralAsset: otoken.collateralAsset.id,
+      depositAmount: actualNeededCollateral,
+      operator: PAYABLE_PROXY[networkId],
+    };
+
+    const callback = () => {
+      setMintAmount(new BigNumber(0));
+      setIsLoading(false);
+      setHasSentMintTx(true);
+
+      ReactGA.event({
+        category: 'Transactions',
+        action: 'Success',
+        label: `${deadline > 0 ? 'SellLimit_HasIssuedOTokens_2/4' : 'Sell_HasIssuedOTokens_2/4'}`,
+      });
+    };
+
+    if (otoken.collateralAsset.symbol === 'WETH') {
+      await depositAndMint(
+        { ...args, depositor: PAYABLE_PROXY[networkId] },
+        callback,
+        (error: any) =>
+          handleError(error, `${deadline > 0 ? 'SellLimit_HasIssuedOTokens_2/4' : 'Sell_HasIssuedOTokens_2/4'}`),
+        isPartial,
+      );
+    } else {
+      await depositAndMint({ ...args, depositor: account }, callback, (error: any) =>
+        handleError(error, `${deadline > 0 ? 'SellLimit_HasIssuedOTokens_2/4' : 'Sell_HasIssuedOTokens_2/4'}`),
+      );
+    }
+  }, [
+    networkId,
+    mintAmount,
+    actualNeededCollateral,
+    otoken,
+    account,
+    depositAndMint,
+    setHasSentMintTx,
+    handleError,
+    deadline,
+    isPartial,
+  ]);
+
+  // simply sell through 0x exchange. (no mint and sell)
+  const pureSell = useCallback(async () => {
+    ReactGA.event({
+      category: 'Sell',
+      action: 'ClickedSellOtoken_4/4',
+    });
+    setIsLoading(true);
+    const args = { orders: ordersToFill, amounts: fillAmounts };
+    const callback = () => {
+      const message = `Successfully sold ${toTokenAmount(sellAmount, 8).toFixed(4)} oTokens!`;
+      setConfirmDescription(message);
+      setIsConfirmed(true);
+      setIsLoading(false);
+      ReactGA.event({
+        category: 'Transactions',
+        action: 'Success',
+        label: 'Sell_SellFilledOrders_4/4',
+      });
+    };
+    const txhash = await fillOrders(args, callback, (error: any) => handleError(error, 'Sell_SellFilledOrders_4/4'));
+    setTxHash(txhash);
+  }, [
+    ordersToFill,
+    fillOrders,
+    fillAmounts,
+    sellAmount,
+    setConfirmDescription,
+    setIsConfirmed,
+    setTxHash,
+    handleError,
+  ]);
+
+  const usdcAddress = useAddresses().usdc;
+
+  const createAndBroadcast = useCallback(async () => {
+    ReactGA.event({
+      category: 'Sell',
+      action: 'ClickedCreateLimitOrder',
+    });
+    const order = await createOrder(otoken.id, usdcAddress, fromTokenAmount(input, 8), totalPremium, deadline);
+    if (!order) return;
+    await broadcastOrder(order);
+    if (order) {
+      ReactGA.event({
+        category: 'Transactions',
+        action: 'Success',
+        label: 'SellLimit_OrderCreated',
+      });
+    }
+  }, [createOrder, broadcastOrder, otoken, totalPremium, input, deadline, usdcAddress]);
+
+  // control button text and onClick
+  useEffect(() => {
+    if (collateral.symbol === 'WETH' && !payableProxyEnabled && !hasSetOperator && mintAmount.gt(0)) {
+      // add operator
+      setSteps(1);
+      setButtonLabel('Approve WETH Wrapper');
+      setOnClick(() => addPayableProxyAsOperator);
+    } else if (collateral.symbol !== 'WETH' && !hasApprovedCollateral && !hasApprovedPool) {
+      // approve USDC
+      setSteps(1);
+      setButtonLabel('Approve Collateral');
+      setOnClick(() => approveMarginPool);
+    } else if (mintAmount.gt(0) && !hasSentMintTx) {
+      // mint otoken
+      setSteps(2);
+      setButtonLabel('Issue oToken');
+      setOnClick(() => mint);
+    } else if (!hasApproved0xProxy && !hasApproved0x) {
+      // approve 0x
+      setSteps(3);
+      setButtonLabel('Approve oToken');
+      setOnClick(() => approveERC20Proxy);
+    } else {
+      // trade
+      setSteps(4);
+      // setIsExchangeTxn(true);
+      if (mode === CreateMode.Market) {
+        if (marketError === Errors.LARGE_MARKET_IMPACT) {
+          setButtonLabel('Make Trade Anyway');
+        } else {
+          setButtonLabel('Sell oToken');
+        }
+        setOnClick(() => pureSell);
+      } else {
+        if (netPremiumIsNegative) {
+          setButtonLabel('Create Order Anyway');
+        } else {
+          setButtonLabel('Create Order');
+        }
+        setOnClick(() => createAndBroadcast);
+      }
+    }
+  }, [
+    mintAmount,
+    hasApproved0xProxy,
+    hasApprovedCollateral,
+    sellAmount,
+    payableProxyEnabled,
+    addPayableProxyAsOperator,
+    approveERC20Proxy,
+    approveMarginPool,
+    collateral.symbol,
+    mint,
+    pureSell,
+    setSteps,
+    hasSetOperator,
+    hasApprovedPool,
+    hasApproved0x,
+    hasSentMintTx,
+    createAndBroadcast,
+    mode,
+    marketError,
+    netPremiumIsNegative,
+  ]);
+
+  const isSmallOrder = useMemo(() => {
+    const fillCostInUSDC = gasPrice.times(ESTIMATE_FILL_COST_PER_GWEI).times(underlyingPrice);
+    const totalPremium = input.times(price);
+    return !totalPremium.isZero() && totalPremium.lt(fillCostInUSDC.times(2));
+  }, [gasPrice, underlyingPrice, input, price]);
+
+  const sellCheckoutSteps: Array<TxStepType> = useMemo(
+    () => [
+      { step: collateral.symbol === 'WETH' ? 'Approve WETH Wrapper' : 'Approve Collateral', type: 'APPROVE' },
+      { step: 'Issue oTokens', type: 'ACTION' },
+      { step: 'Approve oToken to 0x trading contract', type: 'APPROVE' },
+      { step: mode === CreateMode.Market ? 'Sell oToken' : 'Place limit sell order', type: 'ACTION' },
+    ],
+    [mode, collateral],
+  );
+
+  const onPartialSelected = (partial: boolean) => {
+    setIsPartial(partial);
+  };
+
+  return (
+    <div>
+      <ListItem label={'oToken Balance'} value={parseBigNumber(otokenBalance, otoken.decimals)} />
+      <PartialCollat
+        partialSelected={onPartialSelected}
+        setCollatPercent={setCollateralPercent}
+        oToken={otoken}
+        mintAmount={mintAmount}
+        collateral={collateral}
+        underlyingPrice={underlyingPrice}
+        neededCollateral={neededCollateral}
+        setError={setError}
+      />
+      <TxSteps steps={sellCheckoutSteps} currentStep={steps - 1} />
+      <SellTicketInfo
+        otoken={otoken}
+        usdcBalance={usdcBalance}
+        underlyingBalance={underlyingBalance}
+        otokenBalance={otokenBalance}
+        collateralRequired={actualNeededCollateral}
+        amount={new BigNumber(input)}
+        totalPremium={totalPremium}
+        protocolFee={getProtocolFee(ordersToFill)}
+        protocolFeeInUsdc={protocolFeeInUsdc}
+        isMarket={mode === CreateMode.Market}
+        showWarning={buttonLabel.includes('Sell')}
+        marketImpact={marketImpact}
+      />
+      <List disablePadding>
+        {mode === CreateMode.Limit && isSmallOrder ? <SmallLimitOrderWarning /> : null}
+
+        <Box className={classes.actionButtonBox}>
+          {isLoading ? (
+            <Typography variant="overline" display="block" align="center" className={classes.notice}>
+              <CircularProgress />
+            </Typography>
+          ) : (
+            <TradeButton
+              buttonLabel={buttonLabel}
+              disabled={isLoadingAllowance || input.isZero() || isError}
+              onClick={onClick}
+            />
+          )}
+        </Box>
+        <br />
+      </List>
+    </div>
+  );
+};
+
+export default SellCheckout;

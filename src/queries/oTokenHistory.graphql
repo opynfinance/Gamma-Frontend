@@ -1,0 +1,12 @@
+query oTokenHistory($otokenId: String!) {
+  otokenTrades(where: {oToken_contains: $otokenId}) {
+    buyer
+    seller
+    oTokenAmount
+    oToken {
+      symbol
+    }
+    paymentTokenAmount
+    timestamp
+  }
+}

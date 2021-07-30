@@ -1,0 +1,29 @@
+query accountBalances ($account: String!) {
+  accountBalances (where: {account: $account}) {
+      token {
+        id
+        name
+        symbol
+        decimals
+        underlyingAsset{
+          id
+          symbol
+          decimals
+        }
+        strikeAsset {
+          id
+          symbol
+          decimals
+        }
+        collateralAsset {
+          id
+          symbol
+          decimals
+        }
+        strikePrice
+        expiryTimestamp
+        isPut
+      }
+    balance
+  }
+}

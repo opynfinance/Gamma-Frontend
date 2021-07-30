@@ -1,0 +1,21 @@
+query whitelitedProducts($isWhitelisted: Boolean!, $collateral_in: [String]) {
+  whitelistedProducts(where: { isWhitelisted: $isWhitelisted, collateral_in: $collateral_in}) {
+    id
+    strike {
+      symbol
+      id
+      decimals
+    }
+    underlying {
+      symbol
+      id
+      decimals
+    }
+    collateral {
+      symbol
+      id
+      decimals
+    }
+    isPut
+  }
+}

@@ -1,0 +1,107 @@
+# get payout from closing a vault, or redeeming oToken value
+query accountPayouts($account: String!) {
+  settleActions(where: { vault_contains: $account }) {
+    id
+    vault {
+      vaultId
+    }
+    long {
+      id
+      name
+      symbol
+      decimals
+      underlyingAsset {
+        id
+        symbol
+        decimals
+      }
+      strikeAsset {
+        id
+        symbol
+        decimals
+      }
+      collateralAsset {
+        id
+        symbol
+        decimals
+      }
+      strikePrice
+      expiryTimestamp
+      isPut
+    }
+    short {
+      id
+      name
+      symbol
+      decimals
+      underlyingAsset {
+        id
+        symbol
+        decimals
+      }
+      strikeAsset {
+        id
+        symbol
+        decimals
+      }
+      collateralAsset {
+        id
+        symbol
+        decimals
+      }
+      strikePrice
+      expiryTimestamp
+      isPut
+    }
+    collateral {
+      id
+      decimals
+      symbol
+    }
+    collateralAmount
+    longAmount
+    shortAmount
+    block
+    amount
+    timestamp
+    transactionHash
+  }
+
+  redeemActions(where: { receiver: $account }) {
+    transactionHash
+    messageSender
+    timestamp
+    oToken {
+      id
+      name
+      symbol
+      decimals
+      underlyingAsset {
+        id
+        symbol
+        decimals
+      }
+      strikeAsset {
+        id
+        symbol
+        decimals
+      }
+      collateralAsset {
+        id
+        symbol
+        decimals
+      }
+      strikePrice
+      expiryTimestamp
+      isPut
+    }
+    otokenBurned
+    payoutAsset {
+      symbol
+      id
+      decimals
+    }
+    block
+    payoutAmount
+  }
+}

@@ -1,0 +1,18 @@
+query oracleAsset {
+  expiryPrices(first: 1000) {
+    expiry
+    asset {
+      id
+    }
+    price
+  }
+
+  oracleAssets {
+    id
+    pricer {
+      id
+      lockingPeriod
+      disputePeriod
+    }
+  }
+}

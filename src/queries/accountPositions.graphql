@@ -1,0 +1,99 @@
+query accountPositions($account: String!) {
+  account(id: $account) {
+    balances {
+      token {
+        id
+        name
+        symbol
+        decimals
+        underlyingAsset {
+          id
+          symbol
+          decimals
+        }
+        strikeAsset {
+          id
+          symbol
+          decimals
+        }
+        collateralAsset {
+          id
+          symbol
+          decimals
+        }
+        strikePrice
+        expiryTimestamp
+        isPut
+      }
+      balance
+    }
+
+    vaults {
+      vaultId
+      type
+      shortOToken {
+        id
+        name
+        symbol
+        decimals
+        underlyingAsset {
+          id
+          symbol
+          decimals
+        }
+        strikeAsset {
+          id
+          symbol
+          decimals
+        }
+        collateralAsset {
+          id
+          symbol
+          decimals
+        }
+        strikePrice
+        expiryTimestamp
+        isPut
+      }
+      shortAmount
+      longOToken {
+        id
+        name
+        symbol
+        decimals
+        underlyingAsset {
+          id
+          symbol
+          decimals
+        }
+        strikeAsset {
+          id
+          symbol
+          decimals
+        }
+        collateralAsset {
+          id
+          symbol
+          decimals
+        }
+        strikePrice
+        expiryTimestamp
+        isPut
+      }
+      longAmount
+      collateralAsset {
+        id
+        decimals
+        symbol
+      }
+      collateralAmount
+      firstMintTimestamp
+    }
+  }
+  liquidations(where: { vault_contains: $account }) {
+    id
+    vault {
+      vaultId
+    }
+  }
+}

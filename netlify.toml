@@ -1,0 +1,17 @@
+[build]
+  publish = "build"
+  command = "npm run build"
+
+# block sanctioned countries
+[[redirects]]
+  from = "/*"
+  to = "/blocked.html"
+  status = 451
+  force = true
+  conditions = {Country=["BY","CU","IR","IQ","CI","LR","KP","SD","SY","ZW"]}
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+

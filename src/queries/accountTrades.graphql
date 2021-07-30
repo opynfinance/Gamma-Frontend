@@ -1,0 +1,74 @@
+query accountTrades($account: String!) {
+  buys: otokenTrades(where: { buyer: $account }) {
+    id
+    oToken {
+      id
+      name
+      symbol
+      decimals
+      underlyingAsset {
+        id
+        symbol
+        decimals
+      }
+      strikeAsset {
+        id
+        symbol
+        decimals
+      }
+      collateralAsset {
+        id
+        symbol
+        decimals
+      }
+      strikePrice
+      expiryTimestamp
+      isPut
+    }
+    paymentToken {
+      symbol
+      id
+      decimals
+    }
+    paymentTokenAmount
+    oTokenAmount
+    transactionHash
+    timestamp
+  }
+  sells: otokenTrades(where: { seller: $account }) {
+    id
+    oToken {
+      id
+      name
+      symbol
+      decimals
+      underlyingAsset {
+        id
+        symbol
+        decimals
+      }
+      strikeAsset {
+        id
+        symbol
+        decimals
+      }
+      collateralAsset {
+        id
+        symbol
+        decimals
+      }
+      strikePrice
+      expiryTimestamp
+      isPut
+    }
+    paymentToken {
+      symbol
+      id
+      decimals
+    }
+    paymentTokenAmount
+    oTokenAmount
+    transactionHash
+    timestamp
+  }
+}

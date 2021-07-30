@@ -1,0 +1,5 @@
+query accountOperator($id: String!) {
+  accountOperator(id: $id) {
+    id
+  }
+}
