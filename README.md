@@ -6,7 +6,7 @@ Opyn Gamma Frontend
 Opyn's interface for users to access Gamma Protocol options
 </h3>
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/0cc4391a-9c6e-4acf-b7b0-1982eff5f881/deploy-status)](https://app.netlify.com/sites/boring-wilson-fd3074/deploys) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/7d799e0b-2a32-46b1-8bdd-6a4893b9542b/deploy-status)](https://app.netlify.com/sites/opyn-redesign/deploys)  [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
 ## Getting started
 
