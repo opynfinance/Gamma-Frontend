@@ -200,7 +200,7 @@ const SellCheckoutCallee = ({
     if (isPartial && errorType === Errors.SMALL_COLLATERAL) return;
     if (isPartial && errorType === Errors.MAX_CAP_REACHED) return;
     if (netPremiumIsNegative) return setError(Errors.FEE_HIGHER_THAN_PREMIUM);
-    setError(Errors.NO_ERROR);
+    if (errorType !== Errors.NO_ERROR) setError(Errors.NO_ERROR);
   }, [
     marketError,
     collateralBalance,
