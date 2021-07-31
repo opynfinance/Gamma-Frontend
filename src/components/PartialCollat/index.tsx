@@ -271,7 +271,7 @@ const PartialCollat: React.FC<PartialCollatTypes> = ({
 
   useEffect(() => {
     if (
-      dustRequired.gt(toTokenAmount(neededCollateral, oToken.collateralAsset.decimals).multipliedBy(collatValue / 100))
+      dustRequired.gte(toTokenAmount(neededCollateral, oToken.collateralAsset.decimals).multipliedBy(collatValue / 100))
     ) {
       setError(Errors.SMALL_COLLATERAL);
     } else if (

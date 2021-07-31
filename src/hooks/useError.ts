@@ -31,6 +31,14 @@ export function useError(collateral: string): any {
       setIsError(true);
       setErrorName('Greater than max');
       setErrorDescription('You cannot input more than the max amount');
+    } else if (errorType === Errors.SMALL_COLLATERAL) {
+      setIsError(true);
+      setErrorName('Collateral amount is less');
+      setErrorDescription('Collateral amount is lesser than minimum margin required. Try larger input or disable partial collateralization. Minimum required is 1 ETH for calls and 2500 USDC for puts.');
+    } else if (errorType === Errors.MAX_CAP_REACHED) {
+      setIsError(true);
+      setErrorName('Max cap reached');
+      setErrorDescription('Max cap reached for partially collateralized vault. Try smaller input or disable partial collateralization');
     } else if (errorType === Errors.INSUFFICIENT_ETH_GAS_BALANCE) {
       setIsError(false); //warning - they can still access metamask and see gas for themselves 
       setErrorName('Insufficient ETH Balance');
@@ -47,14 +55,6 @@ export function useError(collateral: string): any {
       setIsError(true);
       setErrorName('Deadline past expiry');
       setErrorDescription('Limit order deadline must be before expiry');
-    } else if (errorType === Errors.SMALL_COLLATERAL) {
-      setIsError(true);
-      setErrorName('Collateral amount is less');
-      setErrorDescription('Collateral amount is lesser than minimum margin required. Try larger input or disable partial collateralization. Minimum required is 1 ETH for calls and 2500 USDC for puts.');
-    } else if (errorType === Errors.MAX_CAP_REACHED) {
-      setIsError(true);
-      setErrorName('Max cap reached');
-      setErrorDescription('Max cap reached for partially collateralized vault. Try smaller input or disable partial collateralization');
     } else {
       setIsError(false);
     }
