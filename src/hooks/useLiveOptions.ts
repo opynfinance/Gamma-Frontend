@@ -88,6 +88,8 @@ export async function getLiveOTokens(endpoint: string, networkId: SupportedNetwo
     return acc;
   }, {})
 
+  console.log(oT, seriesToken)
+
   return { otokens: oT, seriesTokens: seriesToken };
 }
 

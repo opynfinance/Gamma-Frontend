@@ -14,6 +14,7 @@ export type ERC20 = {
 export enum CollateralTypesEnum {
   Normal, // collateral is underlying for calls, strike asset for puts
   cToken, // use cToken as collateral
+  yvToken,
 }
 
 export type CollateralType = {

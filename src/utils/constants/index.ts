@@ -20,6 +20,12 @@ export const knownCollateralTypes: CollateralType[] = [
     type: CollateralTypesEnum.cToken,
     collateralTokens: ['cUSDC', 'cETH'],
   },
+  {
+    name: 'yearn',
+    label: '(yv Collateral)',
+    type: CollateralTypesEnum.yvToken,
+    collateralTokens: ['yvUSDC'],
+  },
 ];
 
 export const defaultSeries: Series = {
