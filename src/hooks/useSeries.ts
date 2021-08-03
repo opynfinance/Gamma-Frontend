@@ -53,7 +53,7 @@ export default function useSeries(): { series: Series[]; refetch: Function } {
       const id = `${underlying.id}-${strike.id}-${type.name}`;
       if (!map.has(id)) {
         map.set(id, true);
-        const label = `${underlying.symbol} / ${strike.symbol} ${type.label}`;
+        const label = `${underlying.symbol} / ${type.label}${strike.symbol}`;
         const entity = {
           label,
           underlying,
