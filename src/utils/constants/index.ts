@@ -22,7 +22,7 @@ export const knownCollateralTypes: CollateralType[] = [
   },
   {
     name: 'yearn',
-    label: '(yv Collateral)',
+    label: '(yv)',
     type: CollateralTypesEnum.yvToken,
     collateralTokens: ['yvUSDC'],
   },

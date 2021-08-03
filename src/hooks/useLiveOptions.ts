@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import BigNumber from 'bignumber.js';
 
-import { OToken, SeriesTokens } from '../types';
+import { CollateralType, OToken, SeriesTokens } from '../types';
 import { whitelistedExpiry } from '../utils/constants/whitelist';
 import { SubgraphEndpoint } from '../utils/constants/links';
 import { BLACK_LIST } from '../utils/constants/addresses';
 import { SubgraphOToken, toInternalOToken } from '../utils/subgraph';
 import { useWallet } from '../context/wallet';
-import { SupportedNetworks } from '../utils/constants';
+import { knownCollateralTypes, SupportedNetworks } from '../utils/constants';
 
 export default function useLiveOptions() {
   const [loading, setIsLoading] = useState(true);
@@ -80,15 +80,22 @@ export async function getLiveOTokens(endpoint: string, networkId: SupportedNetwo
   // .filter((o: OToken) => o.expiry === 1612512000);
 
   const seriesToken = oT.reduce((acc: any, o: OToken) => {
-    if (acc[o.underlyingAsset.id]) {
-      acc[o.underlyingAsset.id].push(o);
+    let type: CollateralType = knownCollateralTypes[0];
+    if ((o.isPut && o.collateralAsset.id !== o.strikeAsset.id) || (!o.isPut && o.collateralAsset.id !== o.underlyingAsset.id)) {
+      for (const knownType of knownCollateralTypes) {
+        if (knownType.collateralTokens.includes(o.collateralAsset.symbol)) {
+          type = knownType;
+        }
+      }
+    }
+    const seriesKey = type.label === '' ? o.underlyingAsset.id : `${o.underlyingAsset.id}-${type.label}`;
+    if (acc[seriesKey]) {
+      acc[seriesKey].push(o);
     } else {
-      acc[o.underlyingAsset.id] = [o];
+      acc[seriesKey] = [o];
     }
     return acc;
   }, {})
-
-  console.log(oT, seriesToken)
 
   return { otokens: oT, seriesTokens: seriesToken };
 }

@@ -24,7 +24,7 @@ export default function useSeries(): { series: Series[]; refetch: Function } {
     USDC_ADDRESS[networkId].toLowerCase(),
     WBTC_ADDRESS[networkId].toLowerCase(),
     WETH_ADDRESS[networkId].toLowerCase(),
-    // YVUSDC_ADDRESS[networkId].toLowerCase(),
+    YVUSDC_ADDRESS[networkId].toLowerCase(),
   ]
   const { data, refetch } = useQuery(all_option_query, { variables: { isWhitelisted: true, collateral_in: validCollateral } });
 
@@ -35,8 +35,6 @@ export default function useSeries(): { series: Series[]; refetch: Function } {
     const allProducts: Product[] = data.whitelistedProducts;
 
     const distinctSeries: Series[] = [];
-
-    console.log(allProducts)
 
     const map = new Map();
     for (const { collateral, underlying, strike, isPut } of allProducts) {

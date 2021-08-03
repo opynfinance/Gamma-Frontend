@@ -267,8 +267,6 @@ type OptionsChainProps = {
 };
 
 const OptionsChain = ({
-  selectedSeriesIndex,
-  allSeries,
   oTokens,
   expiry,
   handleSelect,
@@ -280,7 +278,7 @@ const OptionsChain = ({
   const classes = useStyles();
   const [rows, setRows] = useState<Row[]>([]);
   const [tab, setTab] = useState('calls');
-  const [filterEmpty, setFilterEmpty] = useState(true);
+  const [filterEmpty, setFilterEmpty] = useState(false);
 
   const filteredOTokens = useMemo(
     () =>
