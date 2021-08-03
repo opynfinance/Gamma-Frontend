@@ -331,7 +331,7 @@ const SellCheckoutCallee = ({
       });
     };
 
-    if (collateral.symbol === 'WBTC') {
+    if (collateral.symbol === 'WBTC' || collateral.symbol === 'yvUSDC') {
       await approveCollateral({
         callback,
         onError: (error: any) => handleError(error, 'Sell_HasApproveWBTCMarginPool'),

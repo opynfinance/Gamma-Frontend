@@ -3,7 +3,7 @@ import { loader } from 'graphql.macro';
 import { useQuery } from '@apollo/client';
 
 import { ERC20, Series, CollateralType } from '../types';
-import { knownCollateralTypes, USDC_ADDRESS, WBTC_ADDRESS, WETH_ADDRESS } from '../utils/constants';
+import { knownCollateralTypes, USDC_ADDRESS, WBTC_ADDRESS, WETH_ADDRESS, YVUSDC_ADDRESS } from '../utils/constants';
 import { useWallet } from '../context/wallet';
 
 const all_option_query = loader('../queries/products.graphql');
@@ -20,7 +20,12 @@ export default function useSeries(): { series: Series[]; refetch: Function } {
 
   const { networkId } = useWallet();
 
-  const validCollateral = [USDC_ADDRESS[networkId].toLowerCase(), WBTC_ADDRESS[networkId].toLowerCase(), WETH_ADDRESS[networkId].toLowerCase()]
+  const validCollateral = [
+    USDC_ADDRESS[networkId].toLowerCase(),
+    WBTC_ADDRESS[networkId].toLowerCase(),
+    WETH_ADDRESS[networkId].toLowerCase(),
+    YVUSDC_ADDRESS[networkId].toLowerCase(),
+  ]
   const { data, refetch } = useQuery(all_option_query, { variables: { isWhitelisted: true, collateral_in: validCollateral } });
 
   // set series array.
@@ -48,7 +53,7 @@ export default function useSeries(): { series: Series[]; refetch: Function } {
       const id = `${underlying.id}-${strike.id}-${type.name}`;
       if (!map.has(id)) {
         map.set(id, true);
-        const label = `${underlying.symbol} / ${strike.symbol} ${type.label}`;
+        const label = `${underlying.symbol} / ${type.label}${strike.symbol}`;
         const entity = {
           label,
           underlying,

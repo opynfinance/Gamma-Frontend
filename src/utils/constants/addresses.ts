@@ -83,6 +83,12 @@ export const WBTC_ADDRESS = {
   3: '0xe477d1FFC1e5eA6a577846a4699617997315B4ee',
 };
 
+export const YVUSDC_ADDRESS = {
+  1: '0x5f18c75abdae578b483e5f43f12a39cf75b973a9',
+  42: '0x7e6edA50d1c833bE936492BF42C1BF376239E9e2',
+  3: '0x27415c30d8c87437becbd4f98474f26e712047f4',
+};
+
 // No pricer available for ropsten as of now
 
 export const WETH_PRICE_FEED = {

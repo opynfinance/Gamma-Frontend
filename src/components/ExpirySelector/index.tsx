@@ -55,7 +55,7 @@ const ExpirySelector = ({ handleExpiryChange, selectedExpiry, oTokens }: ExpiryS
     }
     return expiry;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liquidityExpiryMap]);
+  }, [liquidityExpiryMap, oTokens]);
 
   useEffect(() => {
     if (isLoadingOrderBook) return;
@@ -64,7 +64,7 @@ const ExpirySelector = ({ handleExpiryChange, selectedExpiry, oTokens }: ExpiryS
       if (selectedExpiry === 0 || !uniqueExpires.includes(selectedExpiry)) {
         const mostLiquidExpiry = getMostLiquidityExpiry();
 
-        if (mostLiquidExpiry) {
+        if (mostLiquidExpiry && oTokens[0].collateralAsset.symbol !== 'yvUSDC') {
           handleExpiryChange(parseInt(mostLiquidExpiry));
         } else {
           handleExpiryChange(uniqueExpires[0]);

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useCallback, useEffect, useReducer, useState } from 'react';
+import React, { useCallback, useEffect, useReducer, useState, useMemo } from 'react';
 import { createStyles, makeStyles, useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
@@ -13,7 +13,7 @@ import BackIcon from '@material-ui/icons/KeyboardBackspace';
 import { DashedCard } from '../../components/Cards';
 import wallet from '../../img/connectWallet.svg';
 import { useSeries, useTokenPrice, useWallet } from '../../hooks';
-import { ERC20, OTokenWithTradeDetail, SeriesTokens } from '../../types';
+import { CollateralTypesEnum, ERC20, OTokenWithTradeDetail, SeriesTokens } from '../../types';
 import SeriesSelector from '../../components/SeriesSelector';
 import ExpirySelector from '../../components/ExpirySelector';
 import AssetCard from '../../components/AssetCard';
@@ -252,7 +252,9 @@ export default function Trade({ seriesTokens }: { seriesTokens: SeriesTokens }) 
   useEffect(() => {
     if (series) {
       const seriesIndex = allSeries.findIndex(
-        seriesObj => seriesObj.underlying.symbol.toLowerCase() === series.toLowerCase(),
+        seriesObj =>
+          seriesObj.underlying.symbol.toLowerCase() === series.toLowerCase() &&
+          seriesObj.collateralType.type !== CollateralTypesEnum.yvToken,
       );
       if (seriesIndex >= 0) {
         setSelectedSeriesIndex(seriesIndex);
@@ -271,6 +273,14 @@ export default function Trade({ seriesTokens }: { seriesTokens: SeriesTokens }) 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oTokenId, allSeries, series, seriesTokens, selectedOToken]);
+
+  const seriesId = useMemo(() => {
+    const selectedSeries = allSeries[selectedSeriesIndex];
+    if (!selectedSeries) return '';
+    return selectedSeries.collateralType.label === ''
+      ? underlying.id
+      : `${underlying.id}-${selectedSeries.collateralType.label}`;
+  }, [selectedSeriesIndex, underlying, allSeries]);
 
   const isSelected = useCallback(
     (cellToken: OToken, action?: TradeAction) => {
@@ -344,7 +354,7 @@ export default function Trade({ seriesTokens }: { seriesTokens: SeriesTokens }) 
               allSeries={allSeries}
             />
             <ExpirySelector
-              oTokens={seriesTokens[underlying.id] || []}
+              oTokens={seriesTokens[seriesId] || []}
               handleExpiryChange={expiry => {
                 setSelectedExpiry(expiry);
               }}
@@ -360,7 +370,7 @@ export default function Trade({ seriesTokens }: { seriesTokens: SeriesTokens }) 
             <OptionsChain
               selectedSeriesIndex={selectedSeriesIndex}
               allSeries={allSeries}
-              oTokens={seriesTokens[underlying.id] || []}
+              oTokens={seriesTokens[seriesId] || []}
               expiry={selectedExpiry}
               handleSelect={handleSelect}
               isSelected={isSelected}
@@ -400,9 +410,7 @@ export default function Trade({ seriesTokens }: { seriesTokens: SeriesTokens }) 
               <OrderTicket
                 underlyingPrice={underlyingPrice}
                 underlying={underlying}
-                collateral={
-                  state.isPut ? allSeries[selectedSeriesIndex].strike : allSeries[selectedSeriesIndex].underlying
-                }
+                collateral={state.selectedOTokens[0].collateralAsset}
                 expiry={selectedExpiry}
                 isPut={state.isPut}
                 selectedOTokens={state.selectedOTokens}
