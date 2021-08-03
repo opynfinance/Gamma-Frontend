@@ -48,7 +48,7 @@ const ManageoTokensCard = ({
   });
 
   const { isError, errorName, errorDescription } = useError(collateral.symbol);
-  const { issueTokens, burnTokens } = useControllerActions();
+  const { issueTokens, burnTokens, burnAndWithdrawCollateral } = useControllerActions();
   const handleAmountChange = (value: BigNumber) => setAmount(value);
 
   const handleActionChange = (event: React.ChangeEvent<{}>, newValue: number) => {
@@ -122,20 +122,48 @@ const ManageoTokensCard = ({
   }, [amount, handleError, issueTokens, mintableOTokens, otoken.id, vaultId]);
 
   const handleBurnOtokens = useCallback(() => {
-    if (!burnTokens) return handleError(new Error('ManageOtokensCard: burnTokens is undefined.'));
+    if (!burnTokens || !burnAndWithdrawCollateral)
+      return handleError(new Error('ManageOtokensCard: burnTokens is undefined.'));
     if (amount.gt(otokenBalance)) return handleError(new Error('Insufficent otokens.'));
     setCardStatus(CardStatus.PENDING);
     const callback = () => setCardStatus(CardStatus.CONFIRMED);
-    burnTokens(
-      {
-        vaultId: vaultId,
-        asset: otoken.id,
-        amount: amount,
-      },
-      callback,
-      handleError,
-    ).then(hash => setTxHash(hash));
-  }, [amount, burnTokens, handleError, otoken.id, otokenBalance, vaultId]);
+    if (amount.eq(otokenBalance)) {
+      // If 100% token is removed withdraw collat
+      burnAndWithdrawCollateral(
+        {
+          vaultId: vaultId,
+          shortAsset: otoken.id,
+          burnAmount: amount, // burn amount
+          collateralAsset: otoken.collateralAsset.id,
+          collateralAmount: collateralAmount,
+          longAsset: '',
+          longAmount: new BigNumber(0),
+        },
+        callback,
+        handleError,
+      ).then(hash => hash && setTxHash(hash));
+    } else {
+      burnTokens(
+        {
+          vaultId: vaultId,
+          asset: otoken.id,
+          amount: amount,
+        },
+        callback,
+        handleError,
+      ).then(hash => setTxHash(hash));
+    }
+  }, [
+    amount,
+    burnAndWithdrawCollateral,
+    burnTokens,
+    collateralAmount,
+    handleError,
+    otoken.collateralAsset.id,
+    otoken.id,
+    otokenBalance,
+    vaultId,
+  ]);
 
   const handleCloseConfirmCard = useCallback(() => setCardStatus(CardStatus.APPROVED), []);
 

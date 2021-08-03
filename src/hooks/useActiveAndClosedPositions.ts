@@ -145,8 +145,6 @@ export function useActiveAndClosedPositions(
     setSellsLeft(_sells);
     setBuysLeft(_buys);
 
-    console.log(positionsWithInitPremium.filter(p => Number(p.expiry) > Date.now() / 1000))
-
     return {
       activePositionsWithInitPremium: positionsWithInitPremium.filter(p => Number(p.expiry) > Date.now() / 1000),
       expiredPositionsWithInitPremium: positionsWithInitPremium.filter(p => Number(p.expiry) < Date.now() / 1000),
