@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useCallback, useEffect, useReducer, useState } from 'react';
+import React, { useCallback, useEffect, useReducer, useState, useMemo } from 'react';
 import { createStyles, makeStyles, useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
@@ -30,7 +30,6 @@ import orderbookImg from '../../img/orderbook.svg';
 import { useQueryParams } from '../../hooks/useQueryParams';
 import RightNav from '../../components/Help/RightNav';
 import Charts from '../../components/Charts';
-import { useMemo } from 'react';
 
 const useStyles = makeStyles(theme =>
   createStyles({
