@@ -69,6 +69,7 @@ const chartOptions = {
     intersect: false,
     mode: 'index',
   },
+  animation: { duration: 0 },
   hover: { animationDuration: 0, intersect: false },
   onHover: (_: any, elements: any) => {
     if (elements && elements.length) {

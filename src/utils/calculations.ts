@@ -357,7 +357,7 @@ export function getPayoutDetails(oTokens: OTokenWithTradeDetail[], action: Trade
     const strike1 = oToken1.strikePrice.toNumber();
     const strike2 = oToken2?.strikePrice?.toNumber() || 0;
     const end = (strike2 ? strike2 : strike1) + 2000;
-    const price = netPremium(oTokens, action).toNumber();
+    const price = netPremium(oTokens, action).absoluteValue().toNumber();
 
     const gain = maxGain(oTokens, action)
     const loss = maxLoss(oTokens, action);
