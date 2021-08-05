@@ -190,7 +190,7 @@ const useMarginCalculator = (props?: marginRequiredProps) => {
   }, [collateral, isPut, shortExpiryTimestamp, strikeAsset, timesToExpiry.length, underlying])
 
   const getNakedMarginVariables = async (props: marginRequiredProps) => {
-    const { underlying, strikeAsset, collateral, shortExpiryTimestamp, collateralDecimals, isPut } = props;
+    const { underlying, strikeAsset, collateral, shortExpiryTimestamp, collateralDecimals, isPut, shortAmount, strikePrice, underlyingPrice } = props;
 
     // Catch error in future
     try {
@@ -198,12 +198,14 @@ const useMarginCalculator = (props?: marginRequiredProps) => {
       const _timesToExpiry = await getTimesToExpiry(underlying, strikeAsset, collateral, isPut);
       const _spotShock = await getSpotShock(underlying, strikeAsset, collateral, isPut);
       const _maxPrice = await getMaxPrice(underlying, strikeAsset, collateral, isPut, shortExpiryTimestamp, _timesToExpiry);
+      const _marginRequired = await getNakedMarginRequired(underlying, strikeAsset, collateral, shortAmount, strikePrice, underlyingPrice, shortExpiryTimestamp, collateralDecimals, isPut)
       
       return {
         dustRequired: _dustRequired,
         timesToExpiry: _timesToExpiry,
         spotShock: _spotShock,
         maxPrice: _maxPrice,
+        marginRequired: _marginRequired,
       }
     } catch(e) {
       console.log(e)

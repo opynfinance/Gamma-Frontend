@@ -305,6 +305,7 @@ const PositionDetail = ({ position, navigateToClosedPositions, deselectPosition,
           collateralAmount={position.collateralAmount}
           manage={action === PositionActions.MANAGE_OTOKENS}
           vaultType={position.vaultType}
+          minCollatPercent={position.minCollatPercent}
         />
       );
     } else if (action === PositionActions.REDEEM) {
@@ -330,6 +331,7 @@ const PositionDetail = ({ position, navigateToClosedPositions, deselectPosition,
               collateralAmount={position.collateralAmount}
               manage={false}
               vaultType={position.vaultType}
+              minCollatPercent={position.minCollatPercent}
             />
           );
         }

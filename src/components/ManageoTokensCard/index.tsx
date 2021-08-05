@@ -6,12 +6,15 @@ import Box from '@material-ui/core/Box';
 import AmountInput from '../AmountInput';
 import ActionCard, { useActionCard } from '../ActionCard';
 import ConfirmingCard from '../ConfirmingCard';
-import { useError, useControllerActions } from '../../hooks';
+import { useError, useControllerActions, useTokenPrice } from '../../hooks';
 import { ShortPositionState } from '../ShortPositionDetail/useShortPosition';
 import { parseBigNumber, parseTxErrorMessage } from '../../utils/parse';
 import { useToast } from '../../context/toast';
 import CardContent from './CardContent';
 import { AntTab, AntTabs } from '../../components/AntTab';
+import { VaultType } from '../../utils/constants';
+import PartialCollat from '../PartialCollat';
+import { calculateSimpleCollateral } from '../../utils/calculations';
 
 enum CardStatus {
   APPROVED,
@@ -33,6 +36,7 @@ const ManageoTokensCard = ({
   shortAmount,
   collateralAmount,
   mintableOTokens,
+  vaultType,
 }: ShortPositionState) => {
   const toast = useToast();
 
@@ -49,7 +53,7 @@ const ManageoTokensCard = ({
 
   const { isError, errorName, errorDescription } = useError(collateral.symbol);
   const { issueTokens, burnTokens, burnAndWithdrawCollateral } = useControllerActions();
-  const handleAmountChange = (value: BigNumber) => setAmount(value);
+  const handleAmountChange = (value: BigNumber) => setAmount(new BigNumber(value.toFixed(0)));
 
   const handleActionChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setAction(newValue === 0 ? Action.ISSUE : Action.BURN);
@@ -60,6 +64,8 @@ const ManageoTokensCard = ({
     // if (action === Action.BURN)
     return otokenBalance;
   }, [action, mintableOTokens, otokenBalance]);
+
+  const underlyingSpotPrice = useTokenPrice(otoken.underlyingAsset.id, 10);
 
   // ui state changes
   useEffect(() => {
@@ -182,6 +188,16 @@ const ManageoTokensCard = ({
     otoken.symbol,
   ]);
 
+  const neededCollateral = useMemo(() => (otoken ? calculateSimpleCollateral(otoken, shortAmount) : new BigNumber(0)), [
+    shortAmount,
+    otoken,
+  ]);
+
+  const availableCollatPercent = useMemo(() => Math.floor(collateralAmount.div(neededCollateral).toNumber() * 100), [
+    collateralAmount,
+    neededCollateral,
+  ]);
+
   return (
     <ActionCard {...actionCardState} handleConfirm={handleConfirm}>
       {cardStatus <= CardStatus.APPROVED ? (
@@ -207,7 +223,33 @@ const ManageoTokensCard = ({
                 decimals={otoken.decimals}
                 onChange={handleAmountChange}
                 max={max}
+                value={amount}
               />
+              {vaultType === VaultType.NAKED_MARGIN ? (
+                <PartialCollat
+                  partialSelected={() => {}}
+                  setCollatPercent={collatPercent => {
+                    setAmount(
+                      new BigNumber(
+                        (action === Action.ISSUE ? shortAmount.multipliedBy(availableCollatPercent / 100) : shortAmount)
+                          .multipliedBy((action === Action.ISSUE ? 100 : availableCollatPercent) / collatPercent)
+                          .minus(shortAmount)
+                          .multipliedBy(action === Action.ISSUE ? 1 : -1)
+                          .toFixed(0),
+                      ),
+                    );
+                  }}
+                  oToken={otoken}
+                  mintAmount={shortAmount}
+                  collateral={collateral}
+                  underlyingPrice={underlyingSpotPrice}
+                  neededCollateral={neededCollateral}
+                  setError={() => {}}
+                  minimum={action === Action.BURN ? availableCollatPercent : undefined}
+                  maximum={action === Action.ISSUE ? availableCollatPercent : undefined}
+                  hideSwitch
+                />
+              ) : null}
               <CardContent
                 collateralAmount={collateralAmount}
                 otokenBalance={otokenBalance}

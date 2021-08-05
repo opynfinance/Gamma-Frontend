@@ -173,7 +173,8 @@ const PartialCollat: React.FC<PartialCollatTypes> = ({
       new BigNumber(timesToExpiry[timesToExpiry.length - 1].toString()).toNumber() > oToken.expiry - Date.now() / 1000;
     setIsPartialEnabled(isEnabled);
     setIsPartial(isEnabled);
-  }, [timesToExpiry.length]);
+    if (spotShock.toNumber() && maxPrice.toNumber()) solveLiqPriceWithCollat(collatValue);
+  }, [timesToExpiry.length, spotShock.toNumber(), maxPrice.toNumber()]);
 
   const minCollatRatio = useMemo(() => {
     if (minimum) return minimum;
