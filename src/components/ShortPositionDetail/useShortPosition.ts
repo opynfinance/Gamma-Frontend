@@ -13,7 +13,8 @@ export type ShortPositionProps = {
   otoken: OToken;
   shortAmount: BigNumber;
   position: Position;
-  vaultType?: VaultType 
+  vaultType?: VaultType;
+  minCollatPercent?: number;
 };
 
 export type ShortPositionState = {
@@ -29,6 +30,7 @@ export type ShortPositionState = {
   position: Position;
   vaultId: number;
   vaultType?: VaultType;
+  minCollatPercent?: number;
   approveCollateral:
     | (({ amount, callback, onError }: { amount: BigNumber; callback: any; onError?: any }) => void)
     | null;
@@ -41,7 +43,8 @@ const useShortPosition = ({
   otoken,
   shortAmount,
   position,
-  vaultType
+  vaultType,
+  minCollatPercent
 }: ShortPositionProps): ShortPositionState => {
   const [redeemableCollateral, setRedeemableCollateral] = useState<BigNumber>(new BigNumber(0));
   const [collateralBalance, setCollateralBalance] = useState<BigNumber>(new BigNumber(0));
@@ -68,7 +71,8 @@ const useShortPosition = ({
             .div(10 ** collateral.decimals)
             .div(otoken.isPut ? otoken.strikePrice : 1)
             .times(10 ** otoken.decimals)
-            .integerValue(BigNumber.ROUND_DOWN);
+            .integerValue(BigNumber.ROUND_DOWN)
+            .multipliedBy(minCollatPercent ? (100 / minCollatPercent) : 1)
 
           setMintableOTokens(mintableOTokens);
           setRedeemableCollateral(result);

@@ -5,7 +5,7 @@ import { ActivePositionWithPNL, VaultStatus } from "../types";
 import useMarginCalculator from "./useMarginCalculator";
 import { useWallet } from "../context/wallet";
 import { TradePosition, VaultType, WETH_ADDRESS } from "../utils/constants";
-import { calculateSimpleCollateral, getVaultStatus } from "../utils/calculations";
+import { calculateSimpleCollateral, getVaultStatus, toTokenAmount } from "../utils/calculations";
 import useChainLinkPrice from "./useChainLinkPrice";
 
 const usePositionHealth = (positions: ActivePositionWithPNL[]) => {
@@ -18,7 +18,7 @@ const usePositionHealth = (positions: ActivePositionWithPNL[]) => {
   const getPositions = useCallback(async () => {
     const _positionsWithHealth = positions.map(async (position) => {
       if (position.underlying.id !== WETH_ADDRESS[networkId] || position.type !== TradePosition.Short || position.vaultType === VaultType.FULLY_COLLATERALIZED || !position.collateral) return position;
-      const { maxPrice, spotShock } = await getNakedMarginVariables({
+      const { maxPrice, spotShock, marginRequired } = await getNakedMarginVariables({
         underlying: position.underlying.id,
         strikeAsset: position.shortOToken?.strikeAsset.id || '',
         collateral: position.collateral?.id || '',
@@ -39,10 +39,17 @@ const usePositionHealth = (positions: ActivePositionWithPNL[]) => {
         else vaultStatus = VaultStatus.PARTIALLY_LIQUIDATED
       }
 
+      const minCollatPercent = (marginRequired || new BigNumber(0))
+      .div(toTokenAmount(neededCollateral, position.collateral.decimals))
+      .multipliedBy(100)
+      .integerValue(BigNumber.ROUND_CEIL)
+      .toNumber();
+
       return {
         ...position,
         spotPercent,
-        vaultStatus
+        vaultStatus,
+        minCollatPercent
       }
     });
 

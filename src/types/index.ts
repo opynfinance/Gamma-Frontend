@@ -88,6 +88,7 @@ export type Position = {
   collateralAmount: BigNumber;
   firstMintTimestamp?: number;
   liquidationStarted?: boolean;
+  minCollatPercent?: number,
 };
 
 export type ActivePositionWithPNL = Position & {
@@ -95,7 +96,7 @@ export type ActivePositionWithPNL = Position & {
   currentPremium: BigNumber;
   profit: BigNumber;
   vaultStatus?: VaultStatus,
-  spotPercent?: number 
+  spotPercent?: number,
 };
 
 export type ClosedPosition = Position & {
