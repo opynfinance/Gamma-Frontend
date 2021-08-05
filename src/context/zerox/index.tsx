@@ -94,11 +94,12 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
 
   const getGasPriceForOrders = useCallback(
     (orders: SignedOrder[]) => {
-      const closestExpiry = Math.min(...orders.map(o => Number(o.expiry) - Date.now() / 1000));
-      // use fastest if it's expiring in 200 secs (3 min 20 sec)
-      return closestExpiry < 300 ? fastest : fast;
+      // const closestExpiry = Math.min(...orders.map(o => Number(o.expiry) - Date.now() / 1000));
+      // // use fastest if it's expiring in 200 secs (3 min 20 sec)
+      // return closestExpiry < 300 ? fastest : fast;
+      return fastest;
     },
-    [fast, fastest],
+    [fastest],
   );
 
   /**
