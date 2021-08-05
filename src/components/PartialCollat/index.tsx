@@ -173,7 +173,6 @@ const PartialCollat: React.FC<PartialCollatTypes> = ({
       new BigNumber(timesToExpiry[timesToExpiry.length - 1].toString()).toNumber() > oToken.expiry - Date.now() / 1000;
     setIsPartialEnabled(isEnabled);
     setIsPartial(isEnabled);
-    console.log(collatValue);
     if (spotShock.toNumber() && maxPrice.toNumber()) solveLiqPriceWithCollat(collatValue);
   }, [timesToExpiry.length, spotShock.toNumber(), maxPrice.toNumber()]);
 
