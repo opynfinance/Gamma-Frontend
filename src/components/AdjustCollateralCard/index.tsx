@@ -73,6 +73,7 @@ const AdjustCollateralCard = ({
   const [action, setAction] = useState<Action>(isWithdrawOnly ? Action.REMOVE : Action.ADD);
   const [cardStatus, setCardStatus] = useState<CardStatus>(CardStatus.APPROVED);
   const [amount, setAmount] = useState(new BigNumber(0));
+  const [collatPercent, setCollatPercent] = useState(0);
 
   const { usdc: usdcAddress } = useAddresses();
   const { allowance: usdcAllowance, approve: approveUsdc } = useApproval(usdcAddress, Spender.MarginPool);
@@ -199,12 +200,20 @@ const AdjustCollateralCard = ({
     if (value.isGreaterThan(max)) {
       setErrorType(Errors.GREATER_THAN_MAX);
     } else {
+      setCollatPercent(
+        parseInt(
+          value
+            .dividedBy(neededCollateral)
+            .multipliedBy(100)
+            .plus(action === Action.ADD ? availableCollatPercent : -availableCollatPercent)
+            .absoluteValue()
+            .toFixed(1),
+        ),
+      );
       setErrorType(Errors.NO_ERROR);
     }
     setAmount(value);
   };
-
-  console.log(isError);
 
   const handleActionChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     if (isWithdrawOnly) return;
@@ -381,13 +390,14 @@ const AdjustCollateralCard = ({
             {vaultType === VaultType.NAKED_MARGIN ? (
               <PartialCollat
                 partialSelected={() => {}}
-                setCollatPercent={collatPercent => {
+                setCollatPercent={p => {
                   setErrorType(Errors.NO_ERROR);
-                  setAmount(
-                    neededCollateral
-                      .multipliedBy((collatPercent - availableCollatPercent) / 100)
-                      .multipliedBy(action === Action.ADD ? 1 : -1),
-                  );
+                  if (collatPercent !== p)
+                    setAmount(
+                      neededCollateral
+                        .multipliedBy((p - availableCollatPercent) / 100)
+                        .multipliedBy(action === Action.ADD ? 1 : -1),
+                    );
                 }}
                 oToken={otoken}
                 mintAmount={shortAmount}
@@ -398,6 +408,7 @@ const AdjustCollateralCard = ({
                 minimum={action === Action.ADD ? availableCollatPercent : undefined}
                 maximum={action === Action.REMOVE ? availableCollatPercent : undefined}
                 hideSwitch
+                collatPercent={collatPercent}
               />
             ) : null}
             <CardContent
