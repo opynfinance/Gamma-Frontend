@@ -65,6 +65,7 @@ type PartialCollatTypes = {
   hideSwitch?: boolean;
   minimum?: number;
   maximum?: number;
+  collatPercent?: number;
 };
 
 const PartialCollat: React.FC<PartialCollatTypes> = ({
@@ -79,6 +80,7 @@ const PartialCollat: React.FC<PartialCollatTypes> = ({
   hideSwitch,
   minimum,
   maximum,
+  collatPercent,
 }) => {
   const [isPartial, setIsPartial] = useState(false);
   const [isPartialEnabled, setIsPartialEnabled] = useState(false);
@@ -252,6 +254,12 @@ const PartialCollat: React.FC<PartialCollatTypes> = ({
     },
     [minCollatRatio, solveLiqPriceWithCollat],
   );
+
+  useEffect(() => {
+    if (collatPercent) {
+      changeSlider([minCollatRatio, collatPercent]);
+    }
+  }, [collatPercent]);
 
   const updateSpot = useCallback(
     (evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

@@ -46,6 +46,8 @@ const ManageoTokensCard = ({
   const [cardStatus, setCardStatus] = useState<CardStatus>(CardStatus.APPROVED);
 
   const [amount, setAmount] = useState(new BigNumber(0));
+  const [collatPercent, setCollatPercent] = useState(0);
+
   const { actionCardState, setActionText, setActionDisabled } = useActionCard({
     title: 'Manage oTokens',
     buttonText: 'Burn oTokens',
@@ -53,7 +55,15 @@ const ManageoTokensCard = ({
 
   const { isError, errorName, errorDescription } = useError(collateral.symbol);
   const { issueTokens, burnTokens, burnAndWithdrawCollateral } = useControllerActions();
-  const handleAmountChange = (value: BigNumber) => setAmount(new BigNumber(value.toFixed(0)));
+  const handleAmountChange = (value: BigNumber) => {
+    const p = (action === Action.ISSUE ? shortAmount.multipliedBy(availableCollatPercent / 100) : shortAmount)
+      .multipliedBy(action === Action.ISSUE ? 100 : availableCollatPercent)
+      .dividedBy(shortAmount.plus(action === Action.ISSUE ? value : value.negated()))
+      .toFixed(1);
+
+    setCollatPercent(parseInt(p));
+    setAmount(new BigNumber(value.toFixed(0)));
+  };
 
   const handleActionChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setAction(newValue === 0 ? Action.ISSUE : Action.BURN);
@@ -228,16 +238,20 @@ const ManageoTokensCard = ({
               {vaultType === VaultType.NAKED_MARGIN ? (
                 <PartialCollat
                   partialSelected={() => {}}
-                  setCollatPercent={collatPercent => {
-                    setAmount(
-                      new BigNumber(
-                        (action === Action.ISSUE ? shortAmount.multipliedBy(availableCollatPercent / 100) : shortAmount)
-                          .multipliedBy((action === Action.ISSUE ? 100 : availableCollatPercent) / collatPercent)
-                          .minus(shortAmount)
-                          .multipliedBy(action === Action.ISSUE ? 1 : -1)
-                          .toFixed(0),
-                      ),
-                    );
+                  setCollatPercent={p => {
+                    if (collatPercent !== p)
+                      setAmount(
+                        new BigNumber(
+                          (action === Action.ISSUE
+                            ? shortAmount.multipliedBy(availableCollatPercent / 100)
+                            : shortAmount
+                          )
+                            .multipliedBy((action === Action.ISSUE ? 100 : availableCollatPercent) / p)
+                            .minus(shortAmount)
+                            .multipliedBy(action === Action.ISSUE ? 1 : -1)
+                            .toFixed(0),
+                        ),
+                      );
                   }}
                   oToken={otoken}
                   mintAmount={shortAmount}
@@ -248,6 +262,7 @@ const ManageoTokensCard = ({
                   minimum={action === Action.BURN ? availableCollatPercent : undefined}
                   maximum={action === Action.ISSUE ? availableCollatPercent : undefined}
                   hideSwitch
+                  collatPercent={collatPercent}
                 />
               ) : null}
               <CardContent

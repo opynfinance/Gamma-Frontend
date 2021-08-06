@@ -15,3 +15,5 @@ html {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+.bn-onboard-custom.bn-onboard-modal { z-index: 99; }
