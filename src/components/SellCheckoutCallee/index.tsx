@@ -30,6 +30,7 @@ import { parseTxErrorMessage, parseTxErrorType, parseBigNumber } from '../../uti
 import { ListItem } from '../ActionCard';
 import TxSteps, { TxStepType } from '../OrderTicket/TxSteps';
 import PartialCollat from '../PartialCollat';
+import usePricer from '../../hooks/usePricer';
 
 type SellCheckoutProps = {
   mode: CreateMode;
@@ -97,6 +98,7 @@ const SellCheckoutCallee = ({
   const classes = useOrderTicketItemStyle();
 
   const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, orderBooks, createOrder, broadcastOrder } = useZeroX();
+  const fxRate = usePricer(collateral.id);
 
   const { approve: approve0xProxy, allowance: oTokenAllowance, loading: loadingOTokenAllowance } = useApproval(
     otoken.id,
@@ -149,10 +151,13 @@ const SellCheckoutCallee = ({
     return getMarketImpact(TradeAction.SELL, bids, sellAmount, sumOutput, getProtocolFee(ordersToFill), gasPrice);
   }, [bids, sellAmount, sumOutput, ordersToFill, getProtocolFee, gasPrice]);
 
-  const neededCollateral = useMemo(() => (otoken ? calculateSimpleCollateral(otoken, mintAmount) : new BigNumber(0)), [
-    mintAmount,
-    otoken,
-  ]);
+  const neededCollateral = useMemo(
+    () =>
+      otoken
+        ? calculateSimpleCollateral(otoken, mintAmount).dividedBy(fxRate).integerValue(BigNumber.ROUND_CEIL)
+        : new BigNumber(0),
+    [fxRate, mintAmount, otoken],
+  );
 
   const actualNeededCollateral = useMemo(() => {
     if (!isPartial) return neededCollateral;
@@ -613,6 +618,7 @@ const SellCheckoutCallee = ({
 
   return (
     <div>
+      <ListItem label={`${collateral.symbol} Balance`} value={parseBigNumber(collateralBalance, collateral.decimals)} />
       <ListItem label={'oToken Balance'} value={parseBigNumber(otokenBalance, otoken.decimals)} />
       <PartialCollat
         partialSelected={onPartialSelected}
