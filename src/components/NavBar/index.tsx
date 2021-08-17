@@ -210,11 +210,16 @@ export default function NavBar({ mode, setMode }: NavBarTypes) {
               </Typography>
             </a>
             <Box className={classes.bottomOptions}>
-              <div className={classes.navLink} role="button" onClick={() => window.$crisp.push(['do', 'chat:open'])}>
+              <a
+                href="http://tiny.cc/opyndiscord"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={classes.navLink}
+              >
                 <Typography className={classes.menuText} variant="body1">
                   Chat with us
                 </Typography>
-              </div>
+              </a>
               <a
                 href="https://opyn.gitbook.io/opyn/security"
                 target="_blank"
