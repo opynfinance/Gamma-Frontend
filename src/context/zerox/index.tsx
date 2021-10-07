@@ -222,9 +222,9 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       return handleTransaction({
         transaction: () =>
           exchange.batchFillLimitOrders(orders, signatures, amountsStr, true, {
-            value: ethers.utils.parseEther(feeInEth),
+            value: feeInEth,
             gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
-            gasLimit: Number(193142 * 1.3).toFixed(0),
+            gasLimit: 170000,
           }),
         callback,
         onError,
@@ -248,7 +248,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       return handleTransaction({
         transaction: () =>
           exchange.fillOrKillLimitOrder(orders[0], signatures[0], makerAssetFillAmount.integerValue().toString(), {
-            value: ethers.utils.parseEther(feeInEth),
+            value: feeInEth,
             gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
           }),
         callback,
