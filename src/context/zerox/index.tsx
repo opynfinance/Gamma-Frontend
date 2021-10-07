@@ -212,12 +212,19 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       const feeInEth = getProtocolFee(orders).toString();
       const amountsStr = amounts.map(amount => amount.toString());
 
+      const gasLimit = await exchange.estimateGas.batchFillLimitOrders(orders, signatures, amountsStr, false, {
+        value: ethers.utils.parseEther(feeInEth),
+        gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
+      });
+
+      console.log(gasLimit.toNumber());
+
       return handleTransaction({
         transaction: () =>
           exchange.batchFillLimitOrders(orders, signatures, amountsStr, false, {
             value: ethers.utils.parseEther(feeInEth),
             gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
-            gasLimit: 170000,
+            gasLimit: gasLimit.toNumber(),
           }),
         callback,
         onError,
