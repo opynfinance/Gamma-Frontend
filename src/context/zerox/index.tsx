@@ -71,7 +71,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
   const toast = useToast();
 
   const { handleTransaction, connected, address: account, signer, networkId, web3 } = useWallet();
-  const { fastest, fast } = useGasPrice(8);
+  const { fastest, fast } = useGasPrice(4);
 
   const [exchange, setExchange] = useState<any>(null);
 
@@ -97,6 +97,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       // const closestExpiry = Math.min(...orders.map(o => Number(o.expiry) - Date.now() / 1000));
       // // use fastest if it's expiring in 200 secs (3 min 20 sec)
       // return closestExpiry < 300 ? fastest : fast;
+      // console.log(fastest.toString())
       return fastest;
     },
     [fastest],
@@ -211,11 +212,19 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       const feeInEth = getProtocolFee(orders).toString();
       const amountsStr = amounts.map(amount => amount.toString());
 
+      const gasLimit = await exchange.estimateGas.batchFillLimitOrders(orders, signatures, amountsStr, false, {
+        value: ethers.utils.parseEther(feeInEth),
+        gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
+      });
+
+      console.log(gasLimit.toNumber());
+
       return handleTransaction({
         transaction: () =>
           exchange.batchFillLimitOrders(orders, signatures, amountsStr, false, {
             value: ethers.utils.parseEther(feeInEth),
             gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
+            gasLimit: Number(193142 * 1.3).toFixed(0),
           }),
         callback,
         onError,

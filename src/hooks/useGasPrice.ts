@@ -27,7 +27,7 @@ export const useGasPrice = (
       setAverage(new BigNumber(response.standard).div(1e9));
     }
     update();
-    const id = setInterval(update, refetchIntervalSec * 15000);
+    const id = setInterval(update, refetchIntervalSec * 1000);
 
     // cleanup function: remove interval
     return () => {
