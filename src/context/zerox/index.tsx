@@ -224,7 +224,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
           exchange.batchFillLimitOrders(orders, signatures, amountsStr, true, {
             value: feeInEth,
             gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
-            gasLimit: 170000,
+            gasLimit: gasLimit.toNumber(),
           }),
         callback,
         onError,
