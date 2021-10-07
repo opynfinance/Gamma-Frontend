@@ -248,7 +248,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       return handleTransaction({
         transaction: () =>
           exchange.fillOrKillLimitOrder(orders[0], signatures[0], makerAssetFillAmount.integerValue().toString(), {
-            value: feeInEth,
+            value: ethers.utils.parseEther(feeInEth),
             gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
           }),
         callback,
