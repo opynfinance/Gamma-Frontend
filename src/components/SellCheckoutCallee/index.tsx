@@ -240,7 +240,6 @@ const SellCheckoutCallee = ({
 
   const handleError = useCallback(
     (error, errorStep?: string) => {
-      console.log('Errrrrro');
       setIsLoading(false);
       const message = parseTxErrorMessage(error);
       const errorType = parseTxErrorType(error);
@@ -428,7 +427,6 @@ const SellCheckoutCallee = ({
 
   // permit, deposit, mint oToken
   const permitDepositMint = useCallback(async () => {
-    console.log('Permit and mint');
     if (!otoken) throw new Error('No OToken selected');
     if (!permitDepositAndMint) return;
     ReactGA.event({
@@ -449,7 +447,6 @@ const SellCheckoutCallee = ({
     };
 
     const callback = () => {
-      console.log('Callback called');
       setMintAmount(new BigNumber(0));
       setIsLoading(false);
       setHasSentMintTx(true);
