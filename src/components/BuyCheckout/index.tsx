@@ -25,6 +25,7 @@ import {
   useWallet,
   // use0xGasFee,
   useGasPrice,
+  useAsyncMemo,
 } from '../../hooks';
 import ReactGA from 'react-ga';
 import TxSteps, { TxStepType } from '../OrderTicket/TxSteps';
@@ -79,7 +80,7 @@ const BuyCheckout = ({
 
   const classes = useOrderTicketItemStyle();
 
-  const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, createOrder, broadcastOrder } = useZeroX();
+  const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, createOrder, broadcastOrder, getGasNeeded } = useZeroX();
 
   const { ethBalance } = useWallet();
 
@@ -104,6 +105,12 @@ const BuyCheckout = ({
     // const reversedAsks = asks.sort(sortAsks);
     return calculateOrderInput(asks, buyAmount, { gasPrice: gasPrice.fastest, ethPrice: underlyingPrice });
   }, [asks, buyAmount, underlyingPrice, gasPrice.fastest]);
+
+  const gasEstimate = useAsyncMemo(
+    () => getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError),
+    new BigNumber(0),
+    [ordersToFill.length, fillAmounts.length],
+  );
 
   const { error: marketError, marketImpact } = useMemo(() => {
     return getMarketImpact(
@@ -135,6 +142,7 @@ const BuyCheckout = ({
       // set liquidity error first
       if (fillOrderError !== Errors.NO_ERROR) setError(fillOrderError);
       else if (marketError !== Errors.NO_ERROR) setError(marketError);
+      else if (toTokenAmount(ethBalance, 18).lt(gasEstimate)) setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
       else if (requiredUSDC.gt(USDCBalance)) setError(Errors.INSUFFICIENT_USDC_BALANCE);
       else setError(Errors.NO_ERROR);
       return;
@@ -159,6 +167,7 @@ const BuyCheckout = ({
     price,
     deadline,
     otoken.expiry,
+    gasEstimate,
   ]);
 
   useEffect(() => {
@@ -297,6 +306,7 @@ const BuyCheckout = ({
         isMarket={mode === CreateMode.Market}
         showWarning={steps === 1}
         marketImpact={marketImpact}
+        estimatedGas={gasEstimate}
       />
       <List disablePadding>
         {/* Show warning if input * price < gas price * 150000 gas * ethPrice */}

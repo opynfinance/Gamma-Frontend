@@ -40,7 +40,7 @@ export function useError(collateral: string): any {
       setErrorName('Max cap reached');
       setErrorDescription('Max cap reached for partially collateralized vault. Try smaller input or disable partial collateralization');
     } else if (errorType === Errors.INSUFFICIENT_ETH_GAS_BALANCE) {
-      setIsError(false); //warning - they can still access metamask and see gas for themselves 
+      setIsError(true); //warning - they can still access metamask and see gas for themselves 
       setErrorName('Insufficient ETH Balance');
       setErrorDescription('Insufficient ETH balance to pay for gas');
     } else if (errorType === Errors.LARGE_MARKET_IMPACT) {
@@ -58,7 +58,7 @@ export function useError(collateral: string): any {
     } else {
       setIsError(false);
     }
-    return () => {};
+    return () => { };
   }, [displayCollateralName, errorType]);
 
   return {

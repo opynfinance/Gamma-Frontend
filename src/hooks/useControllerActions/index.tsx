@@ -206,7 +206,7 @@ const useControllerActions = () => {
           return handleOperate({ args, callback, onError, gasPrice });
         } else {
           const value = props.depositAmount.toString();
-          return handlePayableOperate({ args, value, sendEthTo: account, callback, gasPrice });
+          return handlePayableOperate({ args, value, sendEthTo: account, callback, onError, gasPrice });
         }
       },
       permitDepositAndMint: async (

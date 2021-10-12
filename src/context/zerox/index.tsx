@@ -3,7 +3,14 @@ import BigNumber from 'bignumber.js';
 import { ethers } from 'ethers';
 
 import { useWallet } from '../wallet';
-import { ZeroXEndpoint, PROTOCOL_FEE_PER_GWEI, ZX_EXCHANGE, WETH_ADDRESS, ZERO_ADDR } from '../../utils/constants';
+import {
+  ZeroXEndpoint,
+  PROTOCOL_FEE_PER_GWEI,
+  ZX_EXCHANGE,
+  WETH_ADDRESS,
+  ZERO_ADDR,
+  DEFAULT_ZEROX_GAS_LIMIT,
+} from '../../utils/constants';
 import { SignedOrder, OTokenOrderBook } from '../../types';
 import { useGasPrice } from '../../hooks/useGasPrice';
 import { use0xOrderBooks, useLiveOptions } from '../../hooks';
@@ -36,6 +43,7 @@ type zeroXContextProps = {
   getProtocolFee: (numbOfOrders: SignedOrder[]) => BigNumber;
   getProtocolFeeInUsdc: (numbOfOrders: SignedOrder[]) => BigNumber;
   getGasPriceForOrders: (numbOfOrders: SignedOrder[]) => BigNumber;
+  getGasNeeded: (numbOfOrders: FillOrderArgs, paused?: boolean) => Promise<BigNumber>;
   createOrder: (
     makerAsset: string,
     takerAsset: string,
@@ -57,6 +65,7 @@ const initialContext = {
   getProtocolFee: (orders: SignedOrder[]) => new BigNumber(30).times(orders.length).times(PROTOCOL_FEE_PER_GWEI),
   getProtocolFeeInUsdc: (orders: SignedOrder[]) => new BigNumber(30).times(orders.length).times(PROTOCOL_FEE_PER_GWEI),
   getGasPriceForOrders: (orders: SignedOrder[]) => new BigNumber(30),
+  getGasNeeded: async (orders: FillOrderArgs, paused?: boolean) => new BigNumber(0),
   createOrder: async () => null,
   broadcastOrder: async () => undefined,
   orderBooks: [],
@@ -198,6 +207,35 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
     [networkId, toast],
   );
 
+  const getGasNeeded = useCallback(
+    async (args: FillOrderArgs, paused?: boolean) => {
+      if (!account || paused) return new BigNumber(0);
+
+      const { orders, amounts } = args;
+
+      if (orders.length === 0 || amounts.length === 0) {
+        return new BigNumber(0);
+      }
+      const signatures = orders.map(order => order.signature);
+
+      const gasPrice = getGasPriceForOrders(orders);
+      const feeInEth = getProtocolFee(orders).toString();
+      const amountsStr = amounts.map(amount => amount.toString());
+
+      try {
+        const gasLimit = await exchange.estimateGas.batchFillLimitOrders(orders, signatures, amountsStr, true, {
+          value: ethers.utils.parseEther(feeInEth),
+          gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
+        });
+
+        return gasPrice.times(gasLimit.toNumber() * 1.3).div(1e9);
+      } catch (e) {
+        return new BigNumber(DEFAULT_ZEROX_GAS_LIMIT * 1.3).div(1e9);
+      }
+    },
+    [account, exchange, getGasPriceForOrders, getProtocolFee],
+  );
+
   const fillOrders = useCallback(
     async (args: FillOrderArgs, callback?: any, onError?: any) => {
       if (!account) return;
@@ -212,12 +250,16 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       const feeInEth = getProtocolFee(orders).toString();
       const amountsStr = amounts.map(amount => amount.toString());
 
-      const gasLimit = await exchange.estimateGas.batchFillLimitOrders(orders, signatures, amountsStr, true, {
-        value: ethers.utils.parseEther(feeInEth),
-        gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
-      });
+      let gasLimit = new BigNumber(DEFAULT_ZEROX_GAS_LIMIT); // Default value if estimate gas Failed
 
-      console.log(gasLimit.toNumber());
+      try {
+        gasLimit = await exchange.estimateGas.batchFillLimitOrders(orders, signatures, amountsStr, true, {
+          value: ethers.utils.parseEther(feeInEth),
+          gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
+        });
+      } catch (e) {
+        console.log('Error in fetching gas limit. so setting default value', e);
+      }
 
       return handleTransaction({
         transaction: () =>
@@ -298,6 +340,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       getGasPriceForOrders,
       marketBuy,
       marketSell,
+      getGasNeeded,
     };
   }, [
     cancelOrders,
@@ -312,6 +355,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
     getGasPriceForOrders,
     marketBuy,
     marketSell,
+    getGasNeeded,
   ]);
 
   return <zeroXContext.Provider value={state}>{children}</zeroXContext.Provider>;

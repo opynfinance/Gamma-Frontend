@@ -49,6 +49,7 @@ type BuyInfoProps = {
   isMarket: boolean;
   marketImpact?: BigNumber;
   showWarning: boolean;
+  estimatedGas?: BigNumber;
 };
 const BuyTicketInfo = ({
   underlyingBalance,
@@ -62,6 +63,7 @@ const BuyTicketInfo = ({
   isMarket,
   marketImpact,
   showWarning,
+  estimatedGas,
 }: BuyInfoProps) => {
   const classes = useStyles();
 
@@ -89,6 +91,9 @@ const BuyTicketInfo = ({
               <MarketImpact marketImpact={marketImpact || new BigNumber(0)} action={TradeAction.BUY} />
               <ProtocolFee protocolFee={protocolFee} showWarning={showWarning} warningAction={'buy'} />
             </>
+          ) : null}
+          {isMarket ? (
+            <TxItem label="Est. Gas to be paid" value={(estimatedGas || new BigNumber(0)).toFixed(6)} symbol={'ETH'} />
           ) : null}
         </Box>
         <Box className={classes.txConsolidated}>
@@ -140,6 +145,7 @@ type SellInfoProps = {
   isMarket: boolean;
   marketImpact?: BigNumber;
   showWarning: boolean;
+  estimatedGas?: BigNumber;
 };
 const SellTicketInfo = ({
   collateralRequired,
@@ -154,6 +160,7 @@ const SellTicketInfo = ({
   otoken,
   marketImpact,
   showWarning,
+  estimatedGas,
 }: SellInfoProps) => {
   const classes = useStyles();
   const collateralSymbol = otoken.collateralAsset.symbol === 'WETH' ? 'ETH' : otoken.collateralAsset.symbol;
@@ -181,6 +188,9 @@ const SellTicketInfo = ({
             <>
               <MarketImpact marketImpact={marketImpact || new BigNumber(0)} action={TradeAction.BUY} />
               <ProtocolFee protocolFee={protocolFee} showWarning={showWarning} warningAction={'buy'} />
+              {estimatedGas ? (
+                <TxItem label="Est. Gas to be paid" value={estimatedGas.toFixed(6)} symbol={'ETH'} />
+              ) : null}
             </>
           ) : null}
           <TxItem
@@ -251,6 +261,7 @@ type SpreadInfoProps = {
   showMarketImpact?: boolean;
   marketImpact?: BigNumber;
   marketStep?: TradeAction;
+  estimatedGas?: BigNumber;
 };
 
 const SpreadTicketInfo = ({
@@ -271,6 +282,7 @@ const SpreadTicketInfo = ({
   showMarketImpact,
   marketImpact,
   marketStep,
+  estimatedGas,
 }: SpreadInfoProps) => {
   const classes = useStyles();
 
@@ -305,6 +317,7 @@ const SpreadTicketInfo = ({
             <MarketImpact marketImpact={marketImpact || new BigNumber(0)} action={marketStep || TradeAction.BUY} />
           ) : null}
           <ProtocolFee protocolFee={protocolFee} showWarning={showWarning} warningAction={warningAction} />
+          {estimatedGas ? <TxItem label="Est. Gas to be paid" value={estimatedGas.toFixed(6)} symbol={'ETH'} /> : null}
           {collateralRequired ? (
             <TxItem
               label="Collateral Required"
