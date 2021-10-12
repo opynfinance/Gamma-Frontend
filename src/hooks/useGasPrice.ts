@@ -21,10 +21,10 @@ export const useGasPrice = (
       if (isCancelled) return;
 
       // convert to gwei
-      setFast(new BigNumber(response.fast).div(1e9));
-      setFastest(new BigNumber(response.rapid).div(1e9));
-      setSafeLow(new BigNumber(response.slow).div(1e9));
-      setAverage(new BigNumber(response.standard).div(1e9));
+      setFast(new BigNumber(response.fast).div(10));
+      setFastest(new BigNumber(response.rapid).div(10));
+      setSafeLow(new BigNumber(response.slow).div(10));
+      setAverage(new BigNumber(response.standard).div(10));
     }
     update();
     const id = setInterval(update, refetchIntervalSec * 1000);
@@ -40,22 +40,10 @@ export const useGasPrice = (
 };
 
 const getGasPrice = async (): Promise<{ fast: number; rapid: number; slow: number; standard: number }> => {
-  try {
-    const gasData = await getGasNowPrice();
-    if (gasData.fast) return gasData;
-  } catch (e) {
-    console.log('Error in fetching Gas price using gas now', e);
-  }
-
   return getEthStationGasPrice();
 };
 
-const getGasNowPrice = async (): Promise<{ fast: number; rapid: number; slow: number; standard: number }> => {
-  const url = 'https://www.gasnow.org/api/v3/gas/price?';
-  const res = await fetch(url);
-  const { data } = await res.json();
-  return data;
-};
+
 
 const getEthStationGasPrice = async (): Promise<{ fast: number; rapid: number; slow: number; standard: number }> => {
   const url = 'https://ethgasstation.info/api/ethgasAPI.json?';

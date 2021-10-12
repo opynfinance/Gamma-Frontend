@@ -18,6 +18,7 @@ import {
   useOrderTicketItemStyle,
   useAddresses,
   useGasPrice,
+  useAsyncMemo,
 } from '../../hooks';
 import { ERC20, OToken } from '../../types';
 import { calculateOrderOutput, getMarketImpact } from '../../utils/0x-utils';
@@ -95,7 +96,15 @@ const SellCheckout = ({
 
   const classes = useOrderTicketItemStyle();
 
-  const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, orderBooks, createOrder, broadcastOrder } = useZeroX();
+  const {
+    fillOrders,
+    getProtocolFee,
+    getProtocolFeeInUsdc,
+    orderBooks,
+    createOrder,
+    broadcastOrder,
+    getGasNeeded,
+  } = useZeroX();
   const { approve: approve0xProxy, allowance: oTokenAllowance, loading: loadingOTokenAllowance } = useApproval(
     otoken.id,
     Spender.ZeroXExchange,
@@ -136,7 +145,11 @@ const SellCheckout = ({
     return calculateOrderOutput(bids, sellAmount, { gasPrice, ethPrice: underlyingPrice });
   }, [bids, sellAmount, gasPrice, underlyingPrice]);
 
-  // const gasToPay = use0xGasFee(ordersToFill, fillAmounts, false, isExchangeTxn, isError);
+  const gasEstimate = useAsyncMemo(
+    () => getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError),
+    new BigNumber(0),
+    [ordersToFill.length, fillAmounts.length, gasPrice.toNumber()],
+  );
 
   const { error: marketError, marketImpact } = useMemo(() => {
     return getMarketImpact(TradeAction.SELL, bids, sellAmount, sumOutput, getProtocolFee(ordersToFill), gasPrice);
@@ -190,8 +203,8 @@ const SellCheckout = ({
       return setError(Errors.INSUFFICIENT_BALANCE);
     if (collateral.symbol === 'WETH' && actualNeededCollateral.gt(ethBalance))
       return setError(Errors.INSUFFICIENT_BALANCE);
-    // if (steps === 4 && ethBalance.lt(gasToPay.gasToPay) && mode === CreateMode.Market)
-    //   return setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
+    if (steps === 4 && ethBalance.lt(gasEstimate) && mode === CreateMode.Market)
+      return setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
     if (deadlineTimestamp > otoken.expiry && CreateMode.Limit) return setError(Errors.DEADLINE_PAST_EXPIRY);
     if (isPartial && errorType === Errors.SMALL_COLLATERAL) return;
     if (isPartial && errorType === Errors.MAX_CAP_REACHED) return;
@@ -213,6 +226,7 @@ const SellCheckout = ({
     netPremiumIsNegative,
     isPartial,
     errorType,
+    gasEstimate,
   ]);
 
   const handleError = useCallback(
@@ -526,6 +540,7 @@ const SellCheckout = ({
         isMarket={mode === CreateMode.Market}
         showWarning={buttonLabel.includes('Sell')}
         marketImpact={marketImpact}
+        estimatedGas={steps === 4 ? gasEstimate : undefined}
       />
       <List disablePadding>
         {mode === CreateMode.Limit && isSmallOrder ? <SmallLimitOrderWarning /> : null}

@@ -24,6 +24,7 @@ import {
   useGasPrice,
   Spender,
   useOrderTicketItemStyle,
+  useAsyncMemo,
   // use0xGasFee,
 } from '../../hooks';
 import { PAYABLE_PROXY, Errors, USDC_ADDRESS } from '../../utils/constants';
@@ -103,7 +104,7 @@ const CreateSpread = ({
     firstAction,
   ]);
 
-  const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, orderBooks } = useZeroX();
+  const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, orderBooks, getGasNeeded } = useZeroX();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -248,11 +249,19 @@ const CreateSpread = ({
     shortAmount,
   ]);
 
-  // const buyArgs = { orders: buyOrdersToFill, amounts: fillBuyAmounts, useWeth };
-  // const buyGasToPay = use0xGasFee(buyArgs, isExchangeTxn);
+  const buyArgs = { orders: buyOrdersToFill, amounts: fillBuyAmounts };
+  const buyGasToPay = useAsyncMemo(
+    () => getGasNeeded(buyArgs, isError && buyError !== Errors.INSUFFICIENT_ETH_GAS_BALANCE),
+    new BigNumber(0),
+    [buyOrdersToFill.length, fillBuyAmounts.length, gasPrice.fastest.toNumber()],
+  );
 
-  // const sellArgs = { orders: sellOrdersToFill, amounts: fillSellAmounts, useWeth };
-  // const sellGasToPay = use0xGasFee(sellArgs, isExchangeTxn);
+  const sellArgs = { orders: sellOrdersToFill, amounts: fillSellAmounts };
+  const sellGasToPay = useAsyncMemo(
+    () => getGasNeeded(sellArgs, isError && sellError !== Errors.INSUFFICIENT_ETH_GAS_BALANCE),
+    new BigNumber(0),
+    [sellOrdersToFill.length, fillSellAmounts.length, gasPrice.fastest.toNumber()],
+  );
 
   useEffect(() => {
     if (sellError !== Errors.NO_ERROR) return setError(sellError);
@@ -263,10 +272,8 @@ const CreateSpread = ({
     if (collateral.symbol === 'WETH' && neededCollateral.gt(ethBalance)) return setError(Errors.INSUFFICIENT_BALANCE);
     if (collateral.symbol !== 'WETH' && neededCollateral.gt(collateralBalance))
       return setError(Errors.INSUFFICIENT_BALANCE);
-    // if (steps === SpreadSteps.BUY && ethBalance.lt(buyGasToPay.gasToPay))
-    //   return setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
-    // if (steps === SpreadSteps.SELL && ethBalance.lt(sellGasToPay.gasToPay))
-    // return setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
+    if (steps === SpreadSteps.BUY && ethBalance.lt(buyGasToPay)) return setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
+    if (steps === SpreadSteps.SELL && ethBalance.lt(sellGasToPay)) return setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
     setError(Errors.NO_ERROR);
   }, [
     sellError,
@@ -283,6 +290,8 @@ const CreateSpread = ({
     marketBuyError,
     marketSellError,
     steps,
+    buyGasToPay,
+    sellGasToPay,
   ]);
 
   // check if need to approve to sell "short oToken" on 0x
@@ -755,6 +764,7 @@ const CreateSpread = ({
         showMarketImpact={steps === SpreadSteps.BUY || steps === SpreadSteps.SELL}
         marketImpact={steps === SpreadSteps.BUY ? buyMarketImpact : sellMarketImpact}
         marketStep={steps === SpreadSteps.BUY ? TradeAction.BUY : TradeAction.SELL}
+        estimatedGas={steps === SpreadSteps.BUY ? buyGasToPay : steps === SpreadSteps.SELL ? sellGasToPay : undefined}
       />
       <Box className={classes.actionButtonBox}>
         {isLoading ? (
