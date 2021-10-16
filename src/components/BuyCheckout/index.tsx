@@ -80,28 +80,65 @@ const BuyCheckout = ({
 
   const classes = useOrderTicketItemStyle();
 
-  const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, createOrder, broadcastOrder, getGasNeeded } = useZeroX();
+  const {
+    fillOrders,
+    getProtocolFee,
+    getProtocolFeeInUsdc,
+    createOrder,
+    broadcastOrder,
+    getGasNeeded,
+    gasLimitEstimateFailed,
+  } = useZeroX();
 
   const { ethBalance } = useWallet();
 
   const usdcAddress = useAddresses().usdc;
 
-  const { allowance: usdcAllowance, approve: approveUSDC, loading: isLoadingAllowance } = useApproval(
-    usdcAddress,
-    Spender.ZeroXExchange,
-  );
+  const {
+    allowance: usdcAllowance,
+    approve: approveUSDC,
+    loading: isLoadingAllowance,
+  } = useApproval(usdcAddress, Spender.ZeroXExchange);
 
   const [steps, setSteps] = useState(0);
   // const [isExchangeTxn, setIsExchangeTxn] = useState(false);
 
   const { orderBooks } = useZeroX();
 
+  const handleError = useCallback(
+    (error, errorStep?: string) => {
+      setIsLoading(false);
+      const message = parseTxErrorMessage(error);
+      const errorType = parseTxErrorType(error);
+      toast.error(message);
+      if (errorStep)
+        ReactGA.event({
+          category: 'Transactions',
+          action: errorType,
+          label: `${errorStep} - ${message}`,
+        });
+    },
+    [toast],
+  );
+
+  const throwErrorToast = useCallback(
+    errorVal => {
+      toast.error(errorVal);
+    },
+    [toast],
+  );
+
   const { asks } = useMemo(() => {
     const target = orderBooks.find(book => book.id === otoken.id);
     return target ? target : { asks: [] };
   }, [otoken, orderBooks]);
 
-  const { error: fillOrderError, ordersToFill, amounts: fillAmounts, sumInput: requiredUSDC } = useMemo(() => {
+  const {
+    error: fillOrderError,
+    ordersToFill,
+    amounts: fillAmounts,
+    sumInput: requiredUSDC,
+  } = useMemo(() => {
     // const reversedAsks = asks.sort(sortAsks);
     return calculateOrderInput(asks, buyAmount, { gasPrice: gasPrice.fastest, ethPrice: underlyingPrice });
   }, [asks, buyAmount, underlyingPrice, gasPrice.fastest]);
@@ -140,7 +177,8 @@ const BuyCheckout = ({
 
     if (mode === CreateMode.Market) {
       // set liquidity error first
-      if (fillOrderError !== Errors.NO_ERROR) setError(fillOrderError);
+      if (gasLimitEstimateFailed) throwErrorToast(Errors.GAS_LIMIT_ESTIMATE_FAILED);
+      else if (fillOrderError !== Errors.NO_ERROR) setError(fillOrderError);
       else if (marketError !== Errors.NO_ERROR) setError(marketError);
       else if (toTokenAmount(ethBalance, 18).lt(gasEstimate)) setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
       else if (requiredUSDC.gt(USDCBalance)) setError(Errors.INSUFFICIENT_USDC_BALANCE);
@@ -168,6 +206,8 @@ const BuyCheckout = ({
     deadline,
     otoken.expiry,
     gasEstimate,
+    gasLimitEstimateFailed,
+    throwErrorToast,
   ]);
 
   useEffect(() => {
@@ -179,22 +219,6 @@ const BuyCheckout = ({
       setSteps(1);
     }
   }, [hasEnoughAllowanceFor0x, hasApprove0x]);
-
-  const handleError = useCallback(
-    (error, errorStep?: string) => {
-      setIsLoading(false);
-      const message = parseTxErrorMessage(error);
-      const errorType = parseTxErrorType(error);
-      toast.error(message);
-      if (errorStep)
-        ReactGA.event({
-          category: 'Transactions',
-          action: errorType,
-          label: `${errorStep} - ${message}`,
-        });
-    },
-    [toast],
-  );
 
   const approve = useCallback(async () => {
     if (!approveUSDC) return;
@@ -338,7 +362,11 @@ const BuyCheckout = ({
                 else createAndBroadcast();
               }}
               disabled={
-                isLoadingAllowance || input.isZero() || isError || (mode === CreateMode.Limit && netPremiumIsNegative)
+                isLoadingAllowance ||
+                input.isZero() ||
+                isError ||
+                (mode === CreateMode.Limit && netPremiumIsNegative) ||
+                gasLimitEstimateFailed
               }
             />
           )

@@ -106,13 +106,15 @@ const SellCheckoutCallee = ({
     createOrder,
     broadcastOrder,
     getGasNeeded,
+    gasLimitEstimateFailed,
   } = useZeroX();
   const fxRate = usePricer(collateral.id);
 
-  const { approve: approve0xProxy, allowance: oTokenAllowance, loading: loadingOTokenAllowance } = useApproval(
-    otoken.id,
-    Spender.ZeroXExchange,
-  );
+  const {
+    approve: approve0xProxy,
+    allowance: oTokenAllowance,
+    loading: loadingOTokenAllowance,
+  } = useApproval(otoken.id, Spender.ZeroXExchange);
 
   const { bids } = useMemo(() => {
     const target = orderBooks.find(book => book.id === otoken.id);
@@ -150,7 +152,12 @@ const SellCheckoutCallee = ({
 
   const { fast: gasPrice } = useGasPrice(5);
 
-  const { error: fillOrderError, ordersToFill, amounts: fillAmounts, sumOutput } = useMemo(() => {
+  const {
+    error: fillOrderError,
+    ordersToFill,
+    amounts: fillAmounts,
+    sumOutput,
+  } = useMemo(() => {
     return calculateOrderOutput(bids, sellAmount, { gasPrice, ethPrice: underlyingPrice });
   }, [bids, sellAmount, gasPrice, underlyingPrice]);
 
@@ -201,11 +208,19 @@ const SellCheckoutCallee = ({
 
   const netPremiumIsNegative = Math.sign(premiumToReceiveWithProtocolFee.toNumber()) === -1;
 
+  const throwErrorToast = useCallback(
+    errorVal => {
+      toast.error(errorVal);
+    },
+    [toast],
+  );
+
   // set collateral message
   useEffect(() => {
     let currDate = Math.floor(Date.now() / 1000);
     let deadlineTimestamp = +deadline + +currDate;
 
+    if (gasLimitEstimateFailed) throwErrorToast(Errors.GAS_LIMIT_ESTIMATE_FAILED);
     if (fillOrderError && mode === CreateMode.Market) return setError(fillOrderError);
     if (marketError && mode === CreateMode.Market) return setError(marketError);
     if (collateral.symbol !== 'WETH' && actualNeededCollateral.gt(collateralBalance))
@@ -236,6 +251,8 @@ const SellCheckoutCallee = ({
     errorType,
     isPartial,
     gasEstimate,
+    throwErrorToast,
+    gasLimitEstimateFailed,
   ]);
 
   const handleError = useCallback(
@@ -677,7 +694,7 @@ const SellCheckoutCallee = ({
         ) : (
           <TradeButton
             buttonLabel={buttonLabel}
-            disabled={isLoadingAllowance || input.isZero() || isError}
+            disabled={isLoadingAllowance || input.isZero() || isError || gasLimitEstimateFailed}
             onClick={onClick}
           />
         )}

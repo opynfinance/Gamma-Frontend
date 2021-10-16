@@ -43,6 +43,7 @@ type zeroXContextProps = {
   getProtocolFee: (numbOfOrders: SignedOrder[]) => BigNumber;
   getProtocolFeeInUsdc: (numbOfOrders: SignedOrder[]) => BigNumber;
   getGasPriceForOrders: (numbOfOrders: SignedOrder[]) => BigNumber;
+  gasLimitEstimateFailed: boolean;
   getGasNeeded: (numbOfOrders: FillOrderArgs, paused?: boolean) => Promise<BigNumber>;
   createOrder: (
     makerAsset: string,
@@ -70,6 +71,7 @@ const initialContext = {
   broadcastOrder: async () => undefined,
   orderBooks: [],
   isLoadingOrderBook: false,
+  gasLimitEstimateFailed: false,
   liquidityExpiryMap: {},
 };
 
@@ -83,6 +85,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
   const { fastest, fast } = useGasPrice(4);
 
   const [exchange, setExchange] = useState<any>(null);
+  const [gasLimitEstimateFailed, setGasLimitEstimateFailed] = useState(false);
 
   const { oTokens } = useLiveOptions();
 
@@ -230,6 +233,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
 
         return gasPrice.times(gasLimit.toNumber() * 1.3).div(1e9);
       } catch (e) {
+        setGasLimitEstimateFailed(true);
         return new BigNumber(DEFAULT_ZEROX_GAS_LIMIT * 1.3).div(1e9);
       }
     },
@@ -258,6 +262,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
           gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
         });
       } catch (e) {
+        setGasLimitEstimateFailed(true);
         console.log('Error in fetching gas limit. so setting default value', e);
       }
 
@@ -341,6 +346,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       marketBuy,
       marketSell,
       getGasNeeded,
+      gasLimitEstimateFailed,
     };
   }, [
     cancelOrders,
@@ -356,6 +362,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
     marketBuy,
     marketSell,
     getGasNeeded,
+    gasLimitEstimateFailed,
   ]);
 
   return <zeroXContext.Provider value={state}>{children}</zeroXContext.Provider>;
