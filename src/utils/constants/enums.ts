@@ -10,7 +10,8 @@ export enum Errors {
   FEE_HIGHER_THAN_PREMIUM = '0x Fee higher than premium',
   DEADLINE_PAST_EXPIRY = 'deadline past expiry',
   SMALL_COLLATERAL = 'Collateral amount is small',
-  MAX_CAP_REACHED = 'Max cap reached'
+  MAX_CAP_REACHED = 'Max cap reached',
+  GAS_LIMIT_ESTIMATE_FAILED = 'Transaction will fail due to 0x issues. Please try again later.'
 }
 
 export enum CreateMode {

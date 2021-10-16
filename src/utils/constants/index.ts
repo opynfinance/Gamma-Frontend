@@ -56,4 +56,4 @@ export const PROTOCOL_FEE_PER_GWEI = 0.00000;
 // estimated gast amount to fill an order: 70000 protocol fee + 150000 tx fee
 export const ESTIMATE_FILL_COST_PER_GWEI = 0.00022;
 
-export const DEFAULT_ZEROX_GAS_LIMIT = 250000;
+export const DEFAULT_ZEROX_GAS_LIMIT = 325000;
