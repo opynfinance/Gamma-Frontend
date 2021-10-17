@@ -220,7 +220,7 @@ const SellCheckoutCallee = ({
     let currDate = Math.floor(Date.now() / 1000);
     let deadlineTimestamp = +deadline + +currDate;
 
-    if (gasLimitEstimateFailed) throwErrorToast(Errors.GAS_LIMIT_ESTIMATE_FAILED);
+    if (gasLimitEstimateFailed && steps === 4) throwErrorToast(Errors.GAS_LIMIT_ESTIMATE_FAILED);
     if (fillOrderError && mode === CreateMode.Market) return setError(fillOrderError);
     if (marketError && mode === CreateMode.Market) return setError(marketError);
     if (collateral.symbol !== 'WETH' && actualNeededCollateral.gt(collateralBalance))
@@ -694,7 +694,7 @@ const SellCheckoutCallee = ({
         ) : (
           <TradeButton
             buttonLabel={buttonLabel}
-            disabled={isLoadingAllowance || input.isZero() || isError || gasLimitEstimateFailed}
+            disabled={isLoadingAllowance || input.isZero() || isError || (steps === 4 && gasLimitEstimateFailed)}
             onClick={onClick}
           />
         )}
