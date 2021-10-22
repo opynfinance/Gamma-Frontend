@@ -94,11 +94,10 @@ const BuyCheckout = ({
 
   const usdcAddress = useAddresses().usdc;
 
-  const {
-    allowance: usdcAllowance,
-    approve: approveUSDC,
-    loading: isLoadingAllowance,
-  } = useApproval(usdcAddress, Spender.ZeroXExchange);
+  const { allowance: usdcAllowance, approve: approveUSDC, loading: isLoadingAllowance } = useApproval(
+    usdcAddress,
+    Spender.ZeroXExchange,
+  );
 
   const [steps, setSteps] = useState(0);
   // const [isExchangeTxn, setIsExchangeTxn] = useState(false);
@@ -133,12 +132,7 @@ const BuyCheckout = ({
     return target ? target : { asks: [] };
   }, [otoken, orderBooks]);
 
-  const {
-    error: fillOrderError,
-    ordersToFill,
-    amounts: fillAmounts,
-    sumInput: requiredUSDC,
-  } = useMemo(() => {
+  const { error: fillOrderError, ordersToFill, amounts: fillAmounts, sumInput: requiredUSDC } = useMemo(() => {
     // const reversedAsks = asks.sort(sortAsks);
     return calculateOrderInput(asks, buyAmount, { gasPrice: gasPrice.fastest, ethPrice: underlyingPrice });
   }, [asks, buyAmount, underlyingPrice, gasPrice.fastest]);
@@ -175,6 +169,8 @@ const BuyCheckout = ({
     let currDate = Math.floor(Date.now() / 1000);
     let deadlineTimestamp = +deadline + +currDate;
 
+    console.log(input.toString());
+
     if (mode === CreateMode.Market) {
       // set liquidity error first
       if (gasLimitEstimateFailed) throwErrorToast(Errors.GAS_LIMIT_ESTIMATE_FAILED);
@@ -188,6 +184,8 @@ const BuyCheckout = ({
       setError(Errors.INSUFFICIENT_USDC_BALANCE);
     } else if (deadlineTimestamp > otoken.expiry && CreateMode.Limit) {
       setError(Errors.DEADLINE_PAST_EXPIRY);
+    } else if (!input.isZero() && input.lt(1)) {
+      setError(Errors.SIZE_TOO_SMALL);
     } else {
       setError(Errors.NO_ERROR);
     }

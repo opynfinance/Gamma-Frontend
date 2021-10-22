@@ -55,6 +55,10 @@ export function useError(collateral: string): any {
       setIsError(true);
       setErrorName('Deadline past expiry');
       setErrorDescription('Limit order deadline must be before expiry');
+    } else if (errorType === Errors.SIZE_TOO_SMALL) {
+      setIsError(true);
+      setErrorName('Order too small');
+      setErrorDescription('Minimum size for limit order should be 1 oToken');
     } else {
       setIsError(false);
     }
