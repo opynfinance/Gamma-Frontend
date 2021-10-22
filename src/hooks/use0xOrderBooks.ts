@@ -36,6 +36,7 @@ function orderbookReducer(
     case OrderbookUpdateType.Update: {
       if (!action.updateInfos) return books;
       let orderbooksCopy = [...books];
+      console.log('order updated')
       for (const { type, token, order: orderInfo } of action.updateInfos) {
         if (type === OrderType.BID) {
           const orderBookForThisOToken = orderbooksCopy.find(ob => ob.id === token);

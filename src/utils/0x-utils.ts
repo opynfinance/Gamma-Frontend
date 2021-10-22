@@ -189,12 +189,19 @@ export async function getOTokenUSDCOrderBook(
 
 export const isValidBid = (entry: OrderWithMetaData) => {
   const minBid = 0.1;
-  return getBidPrice(entry.order, USDC_DECIMALS, OTOKEN_DECIMALS).gt(minBid) && isValid(entry);
+  const minSize = fromTokenAmount(1,8)
+  return getBidPrice(entry.order, USDC_DECIMALS, OTOKEN_DECIMALS).gt(minBid) 
+    && new BigNumber(entry.metaData.remainingFillableTakerAmount).gt(minSize) 
+    && isValid(entry);
 };
 
 export const isValidAsk = (entry: OrderWithMetaData) => {
   const maxAsk = 10000;
-  return getAskPrice(entry.order, OTOKEN_DECIMALS, USDC_DECIMALS).lt(maxAsk) && isValid(entry);
+  const minSize = fromTokenAmount(1,8)
+  const makerAmountLeft = getRemainingMakerAndTakerAmount(entry).remainingMakerAmount
+  return getAskPrice(entry.order, OTOKEN_DECIMALS, USDC_DECIMALS).lt(maxAsk) 
+    && new BigNumber(makerAmountLeft).gt(minSize) 
+    && isValid(entry);
 };
 
 /**
