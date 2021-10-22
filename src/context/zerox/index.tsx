@@ -89,7 +89,7 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
 
   const { oTokens } = useLiveOptions();
 
-  const { isLoading: isLoadingOrderBook, orderBooks, liquidityExpiryMap } = use0xOrderBooks(oTokens);
+  const { isLoading: isLoadingOrderBook, orderBooks, liquidityExpiryMap, refreshOrders } = use0xOrderBooks(oTokens);
 
   const weth = useMemo(() => WETH_ADDRESS[networkId], [networkId]);
 
@@ -103,6 +103,12 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
       setExchange(null);
     }
   }, [connected, networkId, signer]);
+
+  useEffect(() => {
+    if (gasLimitEstimateFailed) {
+      refreshOrders();
+    }
+  }, [gasLimitEstimateFailed, refreshOrders]);
 
   const getGasPriceForOrders = useCallback(
     (orders: SignedOrder[]) => {
@@ -227,10 +233,11 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
 
       try {
         const gasLimit = await exchange.estimateGas.batchFillLimitOrders(orders, signatures, amountsStr, true, {
+          from: account,
           value: ethers.utils.parseEther(feeInEth),
           gasPrice: ethers.utils.parseUnits(gasPrice.toString(), 'gwei'),
         });
-
+        setGasLimitEstimateFailed(false);
         return gasPrice.times(gasLimit.toNumber() * 1.3).div(1e9);
       } catch (e) {
         setGasLimitEstimateFailed(true);

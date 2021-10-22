@@ -58,7 +58,11 @@ export function useError(collateral: string): any {
     } else if (errorType === Errors.SIZE_TOO_SMALL) {
       setIsError(true);
       setErrorName('Order too small');
-      setErrorDescription('Minimum size for limit order should be 1 oToken');
+      setErrorDescription(Errors.SIZE_TOO_SMALL);
+    } else if (errorType === Errors.GAS_LIMIT_ESTIMATE_FAILED) {
+      setIsError(true);
+      setErrorName('Gas estimation failed');
+      setErrorDescription(Errors.GAS_LIMIT_ESTIMATE_FAILED);
     } else {
       setIsError(false);
     }

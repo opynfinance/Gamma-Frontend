@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useReducer } from 'react';
+import { useEffect, useState, useMemo, useReducer, useCallback} from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import BigNumber from 'bignumber.js';
 
@@ -36,7 +36,6 @@ function orderbookReducer(
     case OrderbookUpdateType.Update: {
       if (!action.updateInfos) return books;
       let orderbooksCopy = [...books];
-      console.log('order updated')
       for (const { type, token, order: orderInfo } of action.updateInfos) {
         if (type === OrderType.BID) {
           const orderBookForThisOToken = orderbooksCopy.find(ob => ob.id === token);
@@ -153,22 +152,23 @@ export default function use0xOrderBooks(oTokens: OToken[], completeCallback?: an
     true,
   );
 
+  const refreshOrders = useCallback(async() => {
+    if (oTokens.length === 0) return [];
+    setIsLoading(true);
+    const url = window.location.href;
+    const result = await getBasePairAskAndBids(oTokens, networkId, url);
+    setLiquidityExpiryMap(getLiquidityExpiryMap(result, oTokens));
+    setIsLoading(false);
+    if (typeof completeCallback === 'function') completeCallback();
+    return result;
+  }, [completeCallback, networkId, oTokens])
+
   // fetch initial bids and asks when oTokens are ready
   useEffect(() => {
-    async function refreshOrders() {
-      if (oTokens.length === 0) return [];
-      setIsLoading(true);
-      const url = window.location.href;
-      const result = await getBasePairAskAndBids(oTokens, networkId, url);
-      setLiquidityExpiryMap(getLiquidityExpiryMap(result, oTokens));
-      setIsLoading(false);
-      if (typeof completeCallback === 'function') completeCallback();
-      return result;
-    }
     refreshOrders().then((books: OTokenOrderBook[]) => {
       dispatch({ type: OrderbookUpdateType.Init, books });
     });
-  }, [oTokens, networkId, completeCallback]);
+  }, [oTokens, networkId, completeCallback, refreshOrders]);
 
   const { usdc } = useAddresses();
 
@@ -224,5 +224,5 @@ export default function use0xOrderBooks(oTokens: OToken[], completeCallback?: an
     }
   }, [lastMessage, oTokens, networkId, toast, account]);
 
-  return { orderBooks: orderbooksBasic, isLoading, liquidityExpiryMap };
+  return { orderBooks: orderbooksBasic, isLoading, liquidityExpiryMap, refreshOrders };
 }

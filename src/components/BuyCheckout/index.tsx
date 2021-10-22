@@ -138,7 +138,9 @@ const BuyCheckout = ({
   }, [asks, buyAmount, underlyingPrice, gasPrice.fastest]);
 
   const gasEstimate = useAsyncMemo(
-    () => getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError),
+    () => {
+      return getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError);
+    },
     new BigNumber(0),
     [ordersToFill.length, fillAmounts.length],
   );
@@ -169,15 +171,13 @@ const BuyCheckout = ({
     let currDate = Math.floor(Date.now() / 1000);
     let deadlineTimestamp = +deadline + +currDate;
 
-    console.log(input.toString());
-
     if (mode === CreateMode.Market) {
       // set liquidity error first
-      if (gasLimitEstimateFailed) throwErrorToast(Errors.GAS_LIMIT_ESTIMATE_FAILED);
-      else if (fillOrderError !== Errors.NO_ERROR) setError(fillOrderError);
+      if (fillOrderError !== Errors.NO_ERROR) setError(fillOrderError);
       else if (marketError !== Errors.NO_ERROR) setError(marketError);
       else if (toTokenAmount(ethBalance, 18).lt(gasEstimate)) setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
       else if (requiredUSDC.gt(USDCBalance)) setError(Errors.INSUFFICIENT_USDC_BALANCE);
+      else if (gasLimitEstimateFailed) setError(Errors.GAS_LIMIT_ESTIMATE_FAILED);
       else setError(Errors.NO_ERROR);
       return;
     } else if (fromTokenAmount(input.times(price), 6).integerValue().gt(USDCBalance)) {
