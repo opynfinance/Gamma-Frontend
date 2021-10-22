@@ -11,7 +11,7 @@ export enum Errors {
   DEADLINE_PAST_EXPIRY = 'deadline past expiry',
   SMALL_COLLATERAL = 'Collateral amount is small',
   MAX_CAP_REACHED = 'Max cap reached',
-  GAS_LIMIT_ESTIMATE_FAILED = 'Transaction will fail due to 0x issues. Please try again later.'
+  GAS_LIMIT_ESTIMATE_FAILED = 'Quote Expired. Please refresh the page and re-select the option to complete the process'
 }
 
 export enum CreateMode {
