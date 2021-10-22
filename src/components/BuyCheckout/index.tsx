@@ -135,7 +135,8 @@ const BuyCheckout = ({
   const { error: fillOrderError, ordersToFill, amounts: fillAmounts, sumInput: requiredUSDC } = useMemo(() => {
     // const reversedAsks = asks.sort(sortAsks);
     return calculateOrderInput(asks, buyAmount, { gasPrice: gasPrice.fastest, ethPrice: underlyingPrice });
-  }, [asks, buyAmount, underlyingPrice, gasPrice.fastest]);
+    // eslint-disable-next-line
+  }, [asks.length, buyAmount.toString(), underlyingPrice.toString(), gasPrice.fastest]);
 
   const gasEstimate = useAsyncMemo(
     () => {

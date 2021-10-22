@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import BigNumber from 'bignumber.js';
 import Typography from '@material-ui/core/Typography';
 import { createStyles, makeStyles } from '@material-ui/core/styles';
@@ -125,6 +125,10 @@ const LimitOrders = ({ handleRowClick, selectedId, activePositions }: ActivePosi
   const toast = useToast();
 
   const [selectedOrders, setSelectedOrders] = useState<{ [key: string]: boolean }>({});
+
+  useEffect(() => {
+    console.log(`selectedOrders`, selectedOrders);
+  }, [selectedOrders]);
 
   const selectOrder = useCallback(
     orderId => {

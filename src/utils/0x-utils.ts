@@ -208,7 +208,7 @@ export const isValidAsk = (entry: OrderWithMetaData) => {
  * Return true if the order is valid
  */
 export const isValid = (entry: OrderWithMetaData) => {
-  const FILL_BUFFER = 62.5;
+  const FILL_BUFFER = 90;
   const willNotExpireShortly = Number(entry.order.expiry) - Date.now() / 1000 > FILL_BUFFER;
   const isOpen = entry.order.taker === ZERO_ADDR;
   const noTakerFee = entry.order.takerTokenFeeAmount === '0';
