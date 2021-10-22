@@ -156,9 +156,12 @@ const SellCheckoutCallee = ({
   }, [bids, sellAmount, gasPrice, underlyingPrice]);
 
   const gasEstimate = useAsyncMemo(
-    () => getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError),
+    async () => {
+      if (steps !== 4) return new BigNumber(0);
+      return getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError);
+    },
     new BigNumber(0),
-    [ordersToFill.length, fillAmounts.length, gasPrice.toNumber()],
+    [ordersToFill.map(o => o.salt).join('.'), fillAmounts.length, gasPrice.toNumber()],
   );
 
   const { error: marketError, marketImpact } = useMemo(() => {

@@ -260,14 +260,14 @@ const CreateSpread = ({
   const buyGasToPay = useAsyncMemo(
     () => getGasNeeded(buyArgs, isError && buyError !== Errors.INSUFFICIENT_ETH_GAS_BALANCE),
     new BigNumber(0),
-    [buyOrdersToFill.length, fillBuyAmounts.length, gasPrice.fastest.toNumber()],
+    [buyOrdersToFill.map(o => o.salt).join('.'), fillBuyAmounts.length, gasPrice.fastest.toNumber()],
   );
 
   const sellArgs = { orders: sellOrdersToFill, amounts: fillSellAmounts };
   const sellGasToPay = useAsyncMemo(
     () => getGasNeeded(sellArgs, isError && sellError !== Errors.INSUFFICIENT_ETH_GAS_BALANCE),
     new BigNumber(0),
-    [sellOrdersToFill.length, fillSellAmounts.length, gasPrice.fastest.toNumber()],
+    [sellOrdersToFill.map(o => o.salt).join('.'), fillSellAmounts.length, gasPrice.fastest.toNumber()],
   );
 
   const throwErrorToast = useCallback(

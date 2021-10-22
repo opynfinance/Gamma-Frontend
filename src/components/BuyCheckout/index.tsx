@@ -139,11 +139,12 @@ const BuyCheckout = ({
   }, [asks.length, buyAmount.toString(), underlyingPrice.toString(), gasPrice.fastest]);
 
   const gasEstimate = useAsyncMemo(
-    () => {
+    async () => {
+      if (steps !== 1) return new BigNumber(0);
       return getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError);
     },
     new BigNumber(0),
-    [ordersToFill.length, fillAmounts.length],
+    [ordersToFill.map(o => o.salt).join('.'), fillAmounts.length],
   );
 
   const { error: marketError, marketImpact } = useMemo(() => {
@@ -178,7 +179,7 @@ const BuyCheckout = ({
       else if (marketError !== Errors.NO_ERROR) setError(marketError);
       else if (toTokenAmount(ethBalance, 18).lt(gasEstimate)) setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
       else if (requiredUSDC.gt(USDCBalance)) setError(Errors.INSUFFICIENT_USDC_BALANCE);
-      else if (gasLimitEstimateFailed) setError(Errors.GAS_LIMIT_ESTIMATE_FAILED);
+      else if (gasLimitEstimateFailed && steps === 1) setError(Errors.GAS_LIMIT_ESTIMATE_FAILED);
       else setError(Errors.NO_ERROR);
       return;
     } else if (fromTokenAmount(input.times(price), 6).integerValue().gt(USDCBalance)) {
