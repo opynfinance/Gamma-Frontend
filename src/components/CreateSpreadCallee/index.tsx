@@ -90,22 +90,28 @@ const CreateSpread = ({
   const toast = useToast();
   const longOToken = useMemo(() => (firstAction === TradeAction.BUY ? otokens[0] : otokens[1]), [otokens, firstAction]);
 
-  const shortOToken = useMemo(
-    () => (firstAction === TradeAction.BUY ? otokens[1] : otokens[0]),
-    [otokens, firstAction],
-  );
+  const shortOToken = useMemo(() => (firstAction === TradeAction.BUY ? otokens[1] : otokens[0]), [
+    otokens,
+    firstAction,
+  ]);
 
-  const longOTokenBalance = useMemo(
-    () => (firstAction === TradeAction.BUY ? otokenBalances[0] : otokenBalances[1]),
-    [otokenBalances, firstAction],
-  );
-  const shortOTokenBalance = useMemo(
-    () => (firstAction === TradeAction.BUY ? otokenBalances[1] : otokenBalances[0]),
-    [otokenBalances, firstAction],
-  );
+  const longOTokenBalance = useMemo(() => (firstAction === TradeAction.BUY ? otokenBalances[0] : otokenBalances[1]), [
+    otokenBalances,
+    firstAction,
+  ]);
+  const shortOTokenBalance = useMemo(() => (firstAction === TradeAction.BUY ? otokenBalances[1] : otokenBalances[0]), [
+    otokenBalances,
+    firstAction,
+  ]);
 
-  const { fillOrders, getProtocolFee, getProtocolFeeInUsdc, orderBooks, getGasNeeded, gasLimitEstimateFailed } =
-    useZeroX();
+  const {
+    fillOrders,
+    getProtocolFee,
+    getProtocolFeeInUsdc,
+    orderBooks,
+    getGasNeeded,
+    gasLimitEstimateFailed,
+  } = useZeroX();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -150,16 +156,14 @@ const CreateSpread = ({
 
   const paymentToken = useMemo(() => USDC_ADDRESS[networkId], [networkId]);
 
-  const {
-    approve: approve0xPayment,
-    allowance: paymentAllowance,
-    loading: loadingPaymentAllowance,
-  } = useApproval(paymentToken, Spender.ZeroXExchange);
-  const {
-    approve: approve0xShort,
-    allowance: zxShortAllowance,
-    loading: loadingShortAllowance,
-  } = useApproval(shortOToken.id, Spender.ZeroXExchange);
+  const { approve: approve0xPayment, allowance: paymentAllowance, loading: loadingPaymentAllowance } = useApproval(
+    paymentToken,
+    Spender.ZeroXExchange,
+  );
+  const { approve: approve0xShort, allowance: zxShortAllowance, loading: loadingShortAllowance } = useApproval(
+    shortOToken.id,
+    Spender.ZeroXExchange,
+  );
 
   // margin pool needs allowance for long and collateral
   const {
@@ -180,11 +184,10 @@ const CreateSpread = ({
     callData: collateralCallData,
   } = usePermit(collateral.id, Spender.MarginPool);
 
-  const {
-    permit: permitLongOToken,
-    loading: loadingPermitLongAllowance,
-    callData: longCallData,
-  } = usePermit(longOToken.id, Spender.MarginPool);
+  const { permit: permitLongOToken, loading: loadingPermitLongAllowance, callData: longCallData } = usePermit(
+    longOToken.id,
+    Spender.MarginPool,
+  );
 
   const isLoadingAllowance =
     loadingPaymentAllowance ||
@@ -247,23 +250,24 @@ const CreateSpread = ({
     return getMarketImpact(TradeAction.SELL, shortBids, shortAmount, totalPremium, sellProtocolFee, gasPrice.fastest);
   }, [shortBids, shortAmount, totalPremium, sellProtocolFee, gasPrice.fastest]);
 
-  const neededCollateral = useMemo(
-    () => calculateSpreadCollateral(longOToken, shortOToken, shortAmount),
-    [longOToken, shortOToken, shortAmount],
-  );
+  const neededCollateral = useMemo(() => calculateSpreadCollateral(longOToken, shortOToken, shortAmount), [
+    longOToken,
+    shortOToken,
+    shortAmount,
+  ]);
 
   const buyArgs = { orders: buyOrdersToFill, amounts: fillBuyAmounts };
   const buyGasToPay = useAsyncMemo(
     () => getGasNeeded(buyArgs, isError && buyError !== Errors.INSUFFICIENT_ETH_GAS_BALANCE),
     new BigNumber(0),
-    [buyOrdersToFill.length, fillBuyAmounts.length, gasPrice.fastest.toNumber()],
+    [buyOrdersToFill.map(o => o.salt).join('.'), fillBuyAmounts.length, gasPrice.fastest.toNumber()],
   );
 
   const sellArgs = { orders: sellOrdersToFill, amounts: fillSellAmounts };
   const sellGasToPay = useAsyncMemo(
     () => getGasNeeded(sellArgs, isError && sellError !== Errors.INSUFFICIENT_ETH_GAS_BALANCE),
     new BigNumber(0),
-    [sellOrdersToFill.length, fillSellAmounts.length, gasPrice.fastest.toNumber()],
+    [sellOrdersToFill.map(o => o.salt).join('.'), fillSellAmounts.length, gasPrice.fastest.toNumber()],
   );
 
   const throwErrorToast = useCallback(
@@ -274,7 +278,7 @@ const CreateSpread = ({
   );
 
   useEffect(() => {
-    if (gasLimitEstimateFailed) throwErrorToast(Errors.GAS_LIMIT_ESTIMATE_FAILED);
+    if (gasLimitEstimateFailed) return setError(Errors.GAS_LIMIT_ESTIMATE_FAILED);
     if (sellError !== Errors.NO_ERROR) return setError(sellError);
     if (buyError !== Errors.NO_ERROR) return setError(buyError);
     if (marketBuyError !== Errors.NO_ERROR && steps === SpreadSteps.BUY) return setError(marketBuyError);
@@ -311,10 +315,10 @@ const CreateSpread = ({
   const hasEnough0xShortAllowance = useMemo(() => zxShortAllowance.gte(shortAmount), [zxShortAllowance, shortAmount]);
 
   // check if user has enough USDC allowance to buy "long oToken" on 0x
-  const hasEnough0xPaymentTokenAllowance = useMemo(
-    () => paymentAllowance.gte(totalCost),
-    [paymentAllowance, totalCost],
-  );
+  const hasEnough0xPaymentTokenAllowance = useMemo(() => paymentAllowance.gte(totalCost), [
+    paymentAllowance,
+    totalCost,
+  ]);
 
   // check if user has enough allowance on collateral
   const hasEnoughPoolCollateralAllowance = useMemo(() => {

@@ -55,6 +55,14 @@ export function useError(collateral: string): any {
       setIsError(true);
       setErrorName('Deadline past expiry');
       setErrorDescription('Limit order deadline must be before expiry');
+    } else if (errorType === Errors.SIZE_TOO_SMALL) {
+      setIsError(true);
+      setErrorName('Order too small');
+      setErrorDescription(Errors.SIZE_TOO_SMALL);
+    } else if (errorType === Errors.GAS_LIMIT_ESTIMATE_FAILED) {
+      setIsError(true);
+      setErrorName('Gas estimation failed');
+      setErrorDescription(Errors.GAS_LIMIT_ESTIMATE_FAILED);
     } else {
       setIsError(false);
     }

@@ -94,11 +94,10 @@ const BuyCheckout = ({
 
   const usdcAddress = useAddresses().usdc;
 
-  const {
-    allowance: usdcAllowance,
-    approve: approveUSDC,
-    loading: isLoadingAllowance,
-  } = useApproval(usdcAddress, Spender.ZeroXExchange);
+  const { allowance: usdcAllowance, approve: approveUSDC, loading: isLoadingAllowance } = useApproval(
+    usdcAddress,
+    Spender.ZeroXExchange,
+  );
 
   const [steps, setSteps] = useState(0);
   // const [isExchangeTxn, setIsExchangeTxn] = useState(false);
@@ -133,20 +132,19 @@ const BuyCheckout = ({
     return target ? target : { asks: [] };
   }, [otoken, orderBooks]);
 
-  const {
-    error: fillOrderError,
-    ordersToFill,
-    amounts: fillAmounts,
-    sumInput: requiredUSDC,
-  } = useMemo(() => {
+  const { error: fillOrderError, ordersToFill, amounts: fillAmounts, sumInput: requiredUSDC } = useMemo(() => {
     // const reversedAsks = asks.sort(sortAsks);
     return calculateOrderInput(asks, buyAmount, { gasPrice: gasPrice.fastest, ethPrice: underlyingPrice });
-  }, [asks, buyAmount, underlyingPrice, gasPrice.fastest]);
+    // eslint-disable-next-line
+  }, [asks.length, buyAmount.toString(), underlyingPrice.toString(), gasPrice.fastest]);
 
   const gasEstimate = useAsyncMemo(
-    () => getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError),
+    async () => {
+      if (steps !== 1) return new BigNumber(0);
+      return getGasNeeded({ orders: ordersToFill, amounts: fillAmounts }, isError);
+    },
     new BigNumber(0),
-    [ordersToFill.length, fillAmounts.length],
+    [ordersToFill.map(o => o.salt).join('.'), fillAmounts.length],
   );
 
   const { error: marketError, marketImpact } = useMemo(() => {
@@ -177,17 +175,19 @@ const BuyCheckout = ({
 
     if (mode === CreateMode.Market) {
       // set liquidity error first
-      if (gasLimitEstimateFailed) throwErrorToast(Errors.GAS_LIMIT_ESTIMATE_FAILED);
-      else if (fillOrderError !== Errors.NO_ERROR) setError(fillOrderError);
+      if (fillOrderError !== Errors.NO_ERROR) setError(fillOrderError);
       else if (marketError !== Errors.NO_ERROR) setError(marketError);
       else if (toTokenAmount(ethBalance, 18).lt(gasEstimate)) setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
       else if (requiredUSDC.gt(USDCBalance)) setError(Errors.INSUFFICIENT_USDC_BALANCE);
+      else if (gasLimitEstimateFailed && steps === 1) setError(Errors.GAS_LIMIT_ESTIMATE_FAILED);
       else setError(Errors.NO_ERROR);
       return;
     } else if (fromTokenAmount(input.times(price), 6).integerValue().gt(USDCBalance)) {
       setError(Errors.INSUFFICIENT_USDC_BALANCE);
     } else if (deadlineTimestamp > otoken.expiry && CreateMode.Limit) {
       setError(Errors.DEADLINE_PAST_EXPIRY);
+    } else if (!input.isZero() && input.lt(1)) {
+      setError(Errors.SIZE_TOO_SMALL);
     } else {
       setError(Errors.NO_ERROR);
     }

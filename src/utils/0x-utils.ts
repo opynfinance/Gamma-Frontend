@@ -189,19 +189,26 @@ export async function getOTokenUSDCOrderBook(
 
 export const isValidBid = (entry: OrderWithMetaData) => {
   const minBid = 0.1;
-  return getBidPrice(entry.order, USDC_DECIMALS, OTOKEN_DECIMALS).gt(minBid) && isValid(entry);
+  const minSize = fromTokenAmount(1,8)
+  return getBidPrice(entry.order, USDC_DECIMALS, OTOKEN_DECIMALS).gt(minBid) 
+    && new BigNumber(entry.metaData.remainingFillableTakerAmount).gt(minSize) 
+    && isValid(entry);
 };
 
 export const isValidAsk = (entry: OrderWithMetaData) => {
   const maxAsk = 10000;
-  return getAskPrice(entry.order, OTOKEN_DECIMALS, USDC_DECIMALS).lt(maxAsk) && isValid(entry);
+  const minSize = fromTokenAmount(1,8)
+  const makerAmountLeft = getRemainingMakerAndTakerAmount(entry).remainingMakerAmount
+  return getAskPrice(entry.order, OTOKEN_DECIMALS, USDC_DECIMALS).lt(maxAsk) 
+    && new BigNumber(makerAmountLeft).gt(minSize) 
+    && isValid(entry);
 };
 
 /**
  * Return true if the order is valid
  */
 export const isValid = (entry: OrderWithMetaData) => {
-  const FILL_BUFFER = 62.5;
+  const FILL_BUFFER = 90;
   const willNotExpireShortly = Number(entry.order.expiry) - Date.now() / 1000 > FILL_BUFFER;
   const isOpen = entry.order.taker === ZERO_ADDR;
   const noTakerFee = entry.order.takerTokenFeeAmount === '0';

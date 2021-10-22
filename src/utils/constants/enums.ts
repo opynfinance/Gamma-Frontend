@@ -11,7 +11,8 @@ export enum Errors {
   DEADLINE_PAST_EXPIRY = 'deadline past expiry',
   SMALL_COLLATERAL = 'Collateral amount is small',
   MAX_CAP_REACHED = 'Max cap reached',
-  GAS_LIMIT_ESTIMATE_FAILED = 'Quote Expired. Please refresh the page and re-select the option to complete the process'
+  SIZE_TOO_SMALL = 'minimum size for a limit order is 1 oToken',
+  GAS_LIMIT_ESTIMATE_FAILED = '0x transaction estimated to fail. Please try again later'
 }
 
 export enum CreateMode {
