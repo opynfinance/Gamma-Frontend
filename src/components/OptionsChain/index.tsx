@@ -278,7 +278,7 @@ const OptionsChain = ({
   const classes = useStyles();
   const [rows, setRows] = useState<Row[]>([]);
   const [tab, setTab] = useState('calls');
-  const [filterEmpty, setFilterEmpty] = useState(false);
+  const [filterEmpty, setFilterEmpty] = useState(true);
 
   const filteredOTokens = useMemo(
     () =>
