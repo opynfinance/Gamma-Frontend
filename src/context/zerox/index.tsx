@@ -218,7 +218,6 @@ const ZeroXProvider: FunctionComponent = ({ children }) => {
 
   const getGasNeeded = useCallback(
     async (args: FillOrderArgs, paused?: boolean) => {
-      console.log(`estimate kkk`);
       if (!account) return new BigNumber(0);
 
       const { orders, amounts } = args;
