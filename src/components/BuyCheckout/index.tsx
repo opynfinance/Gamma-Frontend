@@ -94,10 +94,11 @@ const BuyCheckout = ({
 
   const usdcAddress = useAddresses().usdc;
 
-  const { allowance: usdcAllowance, approve: approveUSDC, loading: isLoadingAllowance } = useApproval(
-    usdcAddress,
-    Spender.ZeroXExchange,
-  );
+  const {
+    allowance: usdcAllowance,
+    approve: approveUSDC,
+    loading: isLoadingAllowance,
+  } = useApproval(usdcAddress, Spender.ZeroXExchange);
 
   const [steps, setSteps] = useState(0);
   // const [isExchangeTxn, setIsExchangeTxn] = useState(false);
@@ -132,7 +133,12 @@ const BuyCheckout = ({
     return target ? target : { asks: [] };
   }, [otoken, orderBooks]);
 
-  const { error: fillOrderError, ordersToFill, amounts: fillAmounts, sumInput: requiredUSDC } = useMemo(() => {
+  const {
+    error: fillOrderError,
+    ordersToFill,
+    amounts: fillAmounts,
+    sumInput: requiredUSDC,
+  } = useMemo(() => {
     // const reversedAsks = asks.sort(sortAsks);
     return calculateOrderInput(asks, buyAmount, { gasPrice: gasPrice.fastest, ethPrice: underlyingPrice });
     // eslint-disable-next-line
@@ -177,6 +183,7 @@ const BuyCheckout = ({
       // set liquidity error first
       if (fillOrderError !== Errors.NO_ERROR) setError(fillOrderError);
       else if (marketError !== Errors.NO_ERROR) setError(marketError);
+      else if (input.lt(5)) setError(Errors.UNPROFITABLE_DUE_TO_GAS);
       else if (toTokenAmount(ethBalance, 18).lt(gasEstimate)) setError(Errors.INSUFFICIENT_ETH_GAS_BALANCE);
       else if (requiredUSDC.gt(USDCBalance)) setError(Errors.INSUFFICIENT_USDC_BALANCE);
       else if (gasLimitEstimateFailed && steps === 1) setError(Errors.GAS_LIMIT_ESTIMATE_FAILED);
@@ -186,7 +193,7 @@ const BuyCheckout = ({
       setError(Errors.INSUFFICIENT_USDC_BALANCE);
     } else if (deadlineTimestamp > otoken.expiry && CreateMode.Limit) {
       setError(Errors.DEADLINE_PAST_EXPIRY);
-    } else if (!input.isZero() && input.lt(1)) {
+    } else if (mode === CreateMode.Limit && !input.isZero() && input.lt(1)) {
       setError(Errors.SIZE_TOO_SMALL);
     } else {
       setError(Errors.NO_ERROR);

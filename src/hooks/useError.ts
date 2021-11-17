@@ -63,7 +63,12 @@ export function useError(collateral: string): any {
       setIsError(true);
       setErrorName('Gas estimation failed');
       setErrorDescription(Errors.GAS_LIMIT_ESTIMATE_FAILED);
-    } else {
+    } else if (errorType === Errors.UNPROFITABLE_DUE_TO_GAS) {
+      setIsError(true);
+      setErrorName('Unprofitable due to gas');
+      setErrorDescription(Errors.UNPROFITABLE_DUE_TO_GAS);
+    } 
+    else {
       setIsError(false);
     }
     return () => { };
