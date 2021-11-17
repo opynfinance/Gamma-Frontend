@@ -110,10 +110,11 @@ const SellCheckoutCallee = ({
   } = useZeroX();
   const fxRate = usePricer(collateral.id);
 
-  const { approve: approve0xProxy, allowance: oTokenAllowance, loading: loadingOTokenAllowance } = useApproval(
-    otoken.id,
-    Spender.ZeroXExchange,
-  );
+  const {
+    approve: approve0xProxy,
+    allowance: oTokenAllowance,
+    loading: loadingOTokenAllowance,
+  } = useApproval(otoken.id, Spender.ZeroXExchange);
 
   const { bids } = useMemo(() => {
     const target = orderBooks.find(book => book.id === otoken.id);
@@ -151,7 +152,12 @@ const SellCheckoutCallee = ({
 
   const { fast: gasPrice } = useGasPrice(5);
 
-  const { error: fillOrderError, ordersToFill, amounts: fillAmounts, sumOutput } = useMemo(() => {
+  const {
+    error: fillOrderError,
+    ordersToFill,
+    amounts: fillAmounts,
+    sumOutput,
+  } = useMemo(() => {
     return calculateOrderOutput(bids, sellAmount, { gasPrice, ethPrice: underlyingPrice });
   }, [bids, sellAmount, gasPrice, underlyingPrice]);
 
@@ -219,6 +225,7 @@ const SellCheckoutCallee = ({
 
     if (fillOrderError && mode === CreateMode.Market) return setError(fillOrderError);
     if (marketError && mode === CreateMode.Market) return setError(marketError);
+    if (input.lt(5)) return setError(Errors.UNPROFITABLE_DUE_TO_GAS);
     if (collateral.symbol !== 'WETH' && actualNeededCollateral.gt(collateralBalance))
       return setError(Errors.INSUFFICIENT_BALANCE);
     if (collateral.symbol === 'WETH' && actualNeededCollateral.gt(ethBalance))
@@ -232,6 +239,7 @@ const SellCheckoutCallee = ({
     else if (!input.isZero() && input.lt(1)) {
       return setError(Errors.SIZE_TOO_SMALL);
     }
+    if (input.lt(5)) return setError(Errors.UNPROFITABLE_DUE_TO_GAS);
     if (gasLimitEstimateFailed && steps === 4) return setError(Errors.GAS_LIMIT_ESTIMATE_FAILED);
     if (errorType !== Errors.NO_ERROR) setError(Errors.NO_ERROR);
   }, [

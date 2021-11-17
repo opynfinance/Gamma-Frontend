@@ -12,7 +12,8 @@ export enum Errors {
   SMALL_COLLATERAL = 'Collateral amount is small',
   MAX_CAP_REACHED = 'Max cap reached',
   SIZE_TOO_SMALL = 'minimum size for a limit order is 1 oToken',
-  GAS_LIMIT_ESTIMATE_FAILED = '0x transaction estimated to fail. Please try again later'
+  GAS_LIMIT_ESTIMATE_FAILED = '0x transaction estimated to fail. Please try again later',
+  UNPROFITABLE_DUE_TO_GAS = 'This is an unprofitable trade due to gas. Please try 5 oTokens at minimum'
 }
 
 export enum CreateMode {
