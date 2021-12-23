@@ -18,7 +18,7 @@ export const useENS = (address: string | null | undefined): ReturnType => {
       }
     }
     resolveENS();
-  }, [address]);
+  }, [address, networkId]);
 
   return { ensName };
 };
