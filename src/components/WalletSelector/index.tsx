@@ -3,6 +3,7 @@ import React from 'react';
 import { useWallet } from '../../context/wallet';
 import { SupportedNetworks } from '../../utils/constants';
 import { PrimaryButton, SecondaryButton } from '../Buttons';
+import { useENS } from '../../hooks/useENS';
 
 const Circle = ({ connected, networkId }: { connected: boolean; networkId: SupportedNetworks }) => {
   const color = connected ? (networkId === SupportedNetworks.MAINNET ? '#05b169' : '#8F7FFE') : '#DF5F67';
@@ -30,6 +31,7 @@ type SelectorProps = {
 
 const WalletSelector = ({ buttonClicked }: SelectorProps) => {
   const { handleSelectWallet, connected, address, networkId } = useWallet();
+  const { ensName } = useENS(address);
 
   const handleClick = () => {
     buttonClicked?.();
@@ -41,7 +43,7 @@ const WalletSelector = ({ buttonClicked }: SelectorProps) => {
       {connected ? (
         <SecondaryButton onClick={handleClick} variant={'contained'} disableElevation>
           <Circle connected={connected} networkId={networkId} />
-          {formatAddress(address)}
+          {ensName || formatAddress(address)}
         </SecondaryButton>
       ) : (
         <PrimaryButton onClick={handleClick} variant={'contained'} disableElevation>
