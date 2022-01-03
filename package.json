@@ -27,7 +27,7 @@
     "@types/react-router-dom": "^5.1.5",
     "@types/web3": "^1.2.2",
     "bnc-notify": "^1.5.0",
-    "bnc-onboard": "git+https://github.com/koushikmohan1996/onboard.git#1.23.1",
+    "bnc-onboard": "git+https://github.com/KMKoushik/onboard#1.23.1",
     "chart.js": "^2.9.4",
     "clsx": "^1.1.1",
     "dayjs": "^1.10.4",
