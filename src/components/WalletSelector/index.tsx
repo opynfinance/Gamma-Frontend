@@ -31,7 +31,7 @@ type SelectorProps = {
 
 const WalletSelector = ({ buttonClicked }: SelectorProps) => {
   const { handleSelectWallet, connected, address, networkId } = useWallet();
-  const { ensName } = useENS(address);
+  const { ensName, ensAvatar } = useENS(address);
 
   const handleClick = () => {
     buttonClicked?.();
@@ -43,6 +43,18 @@ const WalletSelector = ({ buttonClicked }: SelectorProps) => {
       {connected ? (
         <SecondaryButton onClick={handleClick} variant={'contained'} disableElevation>
           <Circle connected={connected} networkId={networkId} />
+          {ensAvatar && (
+            <img
+              style={{
+                borderRadius: '50%',
+                width: '1.2rem',
+                height: '1.2rem',
+                marginRight: '.50rem',
+              }}
+              src={ensAvatar}
+              alt={address}
+            />
+          )}
           {ensName || formatAddress(address)}
         </SecondaryButton>
       ) : (
