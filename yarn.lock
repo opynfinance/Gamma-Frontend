@@ -2467,7 +2467,7 @@
   dependencies:
     "@ledgerhq/errors" "^5.49.0"
     "@ledgerhq/logs" "^5.49.0"
-    rxjs "^6.6.7"
+    rxjs "^6.6.3"
     semver "^7.3.5"
 
 "@ledgerhq/errors@^4.78.0":
@@ -5039,9 +5039,9 @@ bnc-notify@^1.5.0:
     regenerator-runtime "^0.13.3"
     uuid "^3.3.3"
 
-"bnc-onboard@git+https://github.com/koushikmohan1996/onboard.git#1.23.1":
+"bnc-onboard@git+https://github.com/KMKoushik/onboard.git#1.23.1":
   version "1.23.0-0.2.0"
-  resolved "git+https://github.com/koushikmohan1996/onboard.git#66921115de4eef81d287c68c25c9bca4ce0c3320"
+  resolved "git+https://github.com/KMKoushik/onboard.git#66921115de4eef81d287c68c25c9bca4ce0c3320"
   dependencies:
     "@cvbb/eth-keyring" "^1.1.0"
     "@ledgerhq/hw-app-eth" "^5.49.0"
