@@ -3085,6 +3085,13 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
+"@types/babel__traverse@7.18.2":
+  version "7.18.2"
+  resolved "https://registry.yarnpkg.com/@types/babel__traverse/-/babel__traverse-7.18.2.tgz#235bf339d17185bdec25e024ca19cce257cc7309"
+  integrity sha512-FcFaxOr2V5KZCviw1TnutEMVUVsGt4D2hP1TAfXZAMKuHYW3xQhe3jTxNPWutgCJ3/X1c5yX8ZoGVEItxKbwBg==
+  dependencies:
+    "@babel/types" "^7.3.0"
+
 "@types/bn.js@^4.11.0", "@types/bn.js@^4.11.3", "@types/bn.js@^4.11.5":
   version "4.11.6"
   resolved "https://registry.yarnpkg.com/@types/bn.js/-/bn.js-4.11.6.tgz#c306c70d9358aaea33cd4eda092a742b9505967c"
@@ -5039,9 +5046,9 @@ bnc-notify@^1.5.0:
     regenerator-runtime "^0.13.3"
     uuid "^3.3.3"
 
-"bnc-onboard@git+https://github.com/koushikmohan1996/onboard.git#1.23.1":
+"bnc-onboard@git+https://github.com/KMKoushik/onboard.git#1.23.1":
   version "1.23.0-0.2.0"
-  resolved "git+https://github.com/koushikmohan1996/onboard.git#66921115de4eef81d287c68c25c9bca4ce0c3320"
+  resolved "git+https://github.com/KMKoushik/onboard.git#66921115de4eef81d287c68c25c9bca4ce0c3320"
   dependencies:
     "@cvbb/eth-keyring" "^1.1.0"
     "@ledgerhq/hw-app-eth" "^5.49.0"
